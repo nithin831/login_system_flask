@@ -4,9 +4,15 @@ from validate import change_password_validate
 
 
 def change_password_route(data):
-    active = check_user_exist(data)
-    if active:
-        return active
+    user = check_user_exist(data)
+    if user:
+        is_active, is_blacklisted = user
+        if is_blacklisted:
+            return jsonify({"error": "This email address is blacklisted, Please contact support."}), 400
+        if not is_active:
+            return jsonify({"error": "User not found"}), 404
+    else:
+        return jsonify({"error": "User not found"}), 404
     if not data:
         return jsonify({"error": "Invalid input. JSON payload is required.or enter the user details"}), 400
     validate = change_password_validate(data)

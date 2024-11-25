@@ -9,6 +9,7 @@ from route.blacklist_user import blacklist_user_endpoint
 from route.resend_verification import resend_activation
 from route.reset_password import reset_password_endpoint
 from route.request_reset_password import request_password_reset
+from  route.change_password import change_password_route
 
 app = Flask(__name__)
 app.secret_key = Config.SECRET_KEY
@@ -53,6 +54,10 @@ def requesting_password_reset():
 @app.route('/reset-password', methods=['POST'])
 def password_reset():
     return reset_password_endpoint(token = request.args.get('token'), data=request.get_json())
+#Flask route for password change
+@app.route('/change_password', methods=['POST'])
+def change_password_():
+    return change_password_route(data = request.get_json())
 
 if __name__ == "__main__":
     app.run(debug=True)
