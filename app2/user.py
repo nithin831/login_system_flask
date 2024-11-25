@@ -3,7 +3,6 @@ from database import get_connection, release_connection
 from utils.jwt_utils import generate_jwt, generate_verification_token
 from config import Config
 # from utils.redis_utils import redis_client
-from route.resend_verification import resend_activation
 from utils.email_utils import send_verification_email
 
 def create_user(email, password, name, role):  
@@ -36,11 +35,13 @@ def sign_in(email, password):
             cur.execute("SELECT id, password, role, is_active, name, blacklist FROM user_table WHERE email = %s", (email,))
             user = cur.fetchone()
             if not user:
-                return {"error": "User not found or incorrect credentials."}
+                return {"error": "User not found."}
             user_id, stored_password, stored_role, is_active, name, blacklist= user
             # Check if user is active
             if blacklist:
                 return {"error": "User is Blacklisted. Please contact support."}
+            if not is_active:
+                return {"error": "User not found."}
             # Validate the password
             if bcrypt.checkpw(password.encode('utf-8'), stored_password.tobytes()):
                 # Generate JWT using the utility function
@@ -61,18 +62,85 @@ def check_user_exist(data):
         with conn.cursor() as cur:
             # Check if email already exists in the database
             cur.execute("SELECT is_active, blacklist FROM user_table WHERE email = %s", (email,))
-            user_record = cur.fetchone()
-            if user_record:
-                is_active, is_blacklisted = user_record
-                if is_blacklisted:
-                    return {"error": "This email address is blacklisted and cannot be used for registration, please contact support."}
-                if is_active:
-                    return {"error": "User is already registered."}
-                else:
-                    resend_activation(data)
-                    return {"message": "The user is already registered but not verified. A new verification link has been sent to the provided email address. Please verify your email to complete the registration process."}
-        return False
+            return cur.fetchone()
     finally:
         release_connection(conn)
                 
+# update user 
+def update_user(email, password, name, role):  
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+            cur.execute("""
+                UPDATE user_table 
+                SET password = %(password)s,
+                    name = %(name)s,
+                    role = %(role)s,
+                    created_on = NOW(),
+                    is_active = FALSE,
+                    blacklist = FALSE
+                WHERE email = %(email)s
+            """, {
+                'email': email,
+                'password': hashed_password,
+                'name': name,
+                'role': role
+            })
+        conn.commit()
+        # Generate a new verification token
+        verification_token = generate_verification_token(email)
+        verification_link = f"{Config.FRONTEND_URL}/verify?token={verification_token}"
+        # Send the verification email
+        send_verification_email(email, verification_link)
+    finally:
+        release_connection(conn)
 
+def update_new_password(new_password, email):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            # Hash the new password
+            hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+            cur.execute("UPDATE user_table SET password = %s WHERE email = %s", (hashed_password, email))
+        conn.commit()
+    finally:
+        release_connection(conn)
+
+def activate_user(email):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE user_table SET is_active = TRUE WHERE email = %s", (email,))
+        conn.commit()
+    finally:
+        release_connection(conn)
+
+def blacklist_user(email):
+    """
+    Blacklists the user by setting `blacklist` to true in PostgreSQL.
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE user_table
+                SET blacklist = TRUE
+                WHERE email = %s
+                RETURNING id;
+                """, (email,)
+            )
+            user_id = cur.fetchone()
+            if user_id:
+                conn.commit()
+                
+                # user_id = user_id[0]  # Extract user ID from the result
+                # Remove the JWT from Redis using the Redis key for this user
+                # redis_key = f"jwt:{user_id}"
+                # redis_client.delete(redis_key)
+                return {"message": f"User with email {email} has been blacklisted."}
+            else:
+                return {"error": "User not found."}
+    finally:
+        release_connection(conn)

@@ -7,6 +7,8 @@ from config import Config, mail
 from database import setup_database
 from route.blacklist_user import blacklist_user_endpoint
 from route.resend_verification import resend_activation
+from route.reset_password import reset_password_endpoint
+from route.request_reset_password import request_password_reset
 
 app = Flask(__name__)
 app.secret_key = Config.SECRET_KEY
@@ -43,6 +45,14 @@ def verify():
 @app.route('/resend-activation', methods=['POST'])
 def resend_mail():
     return resend_activation(data=request.get_json())
+
+@app.route('/request-password-reset', methods=['POST'])
+def requesting_password_reset():
+    return request_password_reset(data=request.get_json())
+
+@app.route('/reset-password', methods=['POST'])
+def password_reset():
+    return reset_password_endpoint(token = request.args.get('token'), data=request.get_json())
 
 if __name__ == "__main__":
     app.run(debug=True)
