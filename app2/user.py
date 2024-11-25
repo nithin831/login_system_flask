@@ -144,3 +144,31 @@ def blacklist_user(email):
                 return {"error": "User not found."}
     finally:
         release_connection(conn)
+
+def change_password_logic(email, current_password, new_password):
+    if not email or not current_password or not new_password:
+        return {"error": "Email, current password, and new password are required."}, 400
+    if len(new_password) < 8:
+        return {"error": "New password must be at least 8 characters long."}, 400
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            # Fetch user details
+            cur.execute("SELECT id, password FROM user_table WHERE email = %s", (email,))
+            user = cur.fetchone()
+            if not user:
+                return {"error": "User not found."}, 404
+            user_id, stored_password = user
+            # Validate the current password
+            if not bcrypt.checkpw(current_password.encode('utf-8'), stored_password.tobytes()):
+                return {"error": "Current password is incorrect."}, 401
+            # Hash the new password
+            hashed_new_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+            # Update the password in the database
+            cur.execute("UPDATE user_table SET password = %s WHERE id = %s", (hashed_new_password, user_id))
+            conn.commit()
+            return {"message": "Password updated successfully."}, 200
+    except Exception as e:
+        return {"error": "An error occurred while updating the password.", "details": str(e)}, 500
+    finally:
+        release_connection(conn)
