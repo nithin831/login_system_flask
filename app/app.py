@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, make_response
 from config import Config
 from db import db
-from models import Product
 from create import create
 from update import update
 from remove import delete
