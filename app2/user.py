@@ -146,10 +146,6 @@ def blacklist_user(email):
         release_connection(conn)
 
 def change_password_logic(email, current_password, new_password):
-    # if not email or not current_password or not new_password:
-    #     return {"error": "Email, current password, and new password are required."}, 400
-    # if len(new_password) < 8:
-    #     return {"error": "New password must be at least 8 characters long."}, 400
     conn = get_connection()
     try:
         with conn.cursor() as cur:
@@ -167,7 +163,5 @@ def change_password_logic(email, current_password, new_password):
             cur.execute("UPDATE user_table SET password = %s WHERE email = %s", (hashed_new_password, email))
             conn.commit()
             return {"message": "Password updated successfully."}
-    # except Exception as e:
-    #     return {"error": "An error occurred while updating the password.", "details": str(e)}, 500
     finally:
         release_connection(conn)

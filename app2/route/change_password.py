@@ -5,7 +5,6 @@ from validate import *
 def change_password_route(data):
     # print(data)
     email = data.get('email')
-
     current_password = data.get('current_password')
     new_password = data.get('new_password')
     if not email or not current_password or not new_password:
@@ -26,7 +25,6 @@ def change_password_route(data):
         response = change_password_logic(email, current_password, new_password)
         return jsonify(response),200
     except Exception as e:
-        # raise  e
         return jsonify({"error": str(e)}), 500
 
 
