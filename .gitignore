@@ -1,0 +1,6 @@
+env
+.env
+docker-compose.yml
+commands.txt
+git_cmds.txt
+.idea
