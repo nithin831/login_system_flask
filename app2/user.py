@@ -157,6 +157,8 @@ def change_password_logic(email, current_password, new_password):
             if not bcrypt.checkpw(current_password.encode('utf-8'), stored_password[0].tobytes()):
                 # return {"error": "Current password is incorrect."}, 401
                 raise Exception("Current password is incorrect.")
+            if bcrypt.checkpw(new_password.encode('utf-8'), stored_password[0].tobytes()):
+                raise Exception("The new password cannot be the same as the current password.")
             # Hash the new password
             hashed_new_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
             # Update the password in the database
