@@ -9,12 +9,14 @@ from route.blacklist_user import blacklist_user_endpoint
 from route.resend_verification import resend_activation
 from route.reset_password import reset_password_endpoint
 from route.request_reset_password import request_password_reset
-from  route.change_password import change_password_route
+from route.change_password import change_password_route
+from route.verify_totp import verify_totp
+from route.qr_code import qr_code
 
 app = Flask(__name__)
-app.secret_key = Config.SECRET_KEY
+# app.secret_key = Config.SECRET_KEY
 app.config.from_object(Config)
-
+app.json.sort_keys = False
 # Initialize Flask-Mail with the app
 mail.init_app(app)
 setup_database()
@@ -58,6 +60,14 @@ def password_reset():
 @app.route('/change_password', methods=['POST'])
 def change_password_():
     return change_password_route(data = request.get_json())
+
+@app.route('/verify-totp', methods=['POST'])
+def totp_verification():
+    return verify_totp(token = request.args.get('token'), data=request.get_json())
+
+@app.route('/qr-code', methods=['GET'])
+def qr_code_generation():
+    return qr_code(token = request.args.get('token'))
 
 if __name__ == "__main__":
     app.run(debug=True)

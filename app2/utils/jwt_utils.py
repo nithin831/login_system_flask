@@ -17,7 +17,7 @@ def generate_jwt(user_id, name, email, role, is_active, blacklist):
         "blacklist": blacklist,
         "exp": expiration
     }
-    token = jwt.encode(payload, Config.SECRET_KEY, algorithm="HS256")
+    token = jwt.encode(payload, Config.LOGIN_SECRET_KEY, algorithm="HS256")
     return token
 
 def get_user_details_from_jwt(token):
@@ -27,7 +27,7 @@ def get_user_details_from_jwt(token):
     """
     try:
         # Decode the JWT to extract user info
-        payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(token, Config.LOGIN_SECRET_KEY, algorithms=["HS256"])
         user_id = payload.get("user_id")
         
         # # Check if the JWT exists in Redis
@@ -58,11 +58,11 @@ def get_user_details_from_jwt(token):
 def generate_verification_token(email):
     expiration_time = datetime.utcnow() + timedelta(minutes=5)  # 5 minutes expiration
     payload = {'email': email, 'exp': expiration_time}
-    return jwt.encode(payload, Config.SECRET_KEY, algorithm='HS256')
+    return jwt.encode(payload, Config.MAIL_SECRET_KEY, algorithm='HS256')
 
 def decode_verification_token(token):
     try:
-        payload = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
+        payload = jwt.decode(token, Config.MAIL_SECRET_KEY, algorithms=['HS256'])
         return payload['email']
     except jwt.ExpiredSignatureError:
         raise Exception("Verification link has expired.")

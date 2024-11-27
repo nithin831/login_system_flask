@@ -62,6 +62,7 @@ def setup_database():
                         name VARCHAR(100) NOT NULL,
                         role userrole NOT NULL,  -- Using ENUM type for role
                         created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        secret_key VARCHAR(255) NULL,
                         is_active BOOLEAN DEFAULT FALSE,
                         blacklist BOOLEAN DEFAULT FALSE
                     );

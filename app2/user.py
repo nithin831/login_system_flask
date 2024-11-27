@@ -27,31 +27,13 @@ def create_user(email, password, name, role):
     finally:
         release_connection(conn)
 
-def sign_in(email, password):
+def sign_in(email):
     """Signs in a user by verifying email and password, then returns a JWT on success."""
     conn = get_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, password, role, is_active, name, blacklist FROM user_table WHERE email = %s", (email,))
-            user = cur.fetchone()
-            if not user:
-                return {"error": "User not found."}
-            user_id, stored_password, stored_role, is_active, name, blacklist= user
-            # Check if user is active
-            if blacklist:
-                return {"error": "User is Blacklisted. Please contact support."}
-            if not is_active:
-                return {"error": "User not found."}
-            # Validate the password
-            if bcrypt.checkpw(password.encode('utf-8'), stored_password.tobytes()):
-                # Generate JWT using the utility function
-                token = generate_jwt(user_id, name, email, stored_role, is_active, blacklist)
-                # Store JWT in Redis with expiration
-                # redis_key = f"jwt:{user_id}"
-                # redis_client.setex(redis_key, Config.JWT_EXPIRATION_SECONDS, token)
-                return {"message": "Sign-in successful.", "token": token}
-            else:
-                return {"error": "User not found or incorrect credentials."}
+            cur.execute("SELECT id, password, role, is_active, name, blacklist, secret_key FROM user_table WHERE email = %s", (email,))
+            return cur.fetchone()
     finally:
         release_connection(conn)
         
@@ -163,5 +145,24 @@ def change_password_logic(email, current_password, new_password):
             cur.execute("UPDATE user_table SET password = %s WHERE email = %s", (hashed_new_password, email))
             conn.commit()
             return {"message": "Password updated successfully."}
+    finally:
+        release_connection(conn)
+
+def update_secret_key(secret_key, email):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE user_table SET secret_key = %s WHERE email = %s", (secret_key, email))
+        conn.commit()
+    finally:
+        release_connection(conn)
+
+def fetch_secret_key(email):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            # Check if email already exists in the database
+            cur.execute("SELECT secret_key FROM user_table WHERE email = %s", (email,))
+            return cur.fetchone()
     finally:
         release_connection(conn)

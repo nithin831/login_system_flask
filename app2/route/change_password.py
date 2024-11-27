@@ -22,6 +22,8 @@ def change_password_route(data):
         else:
             return jsonify({"error": "User not found"}), 404
         # Calling the password  logic
+        if new_password == current_password:
+            return jsonify({"error": "New password must be different"}), 404
         response = change_password_logic(email, current_password, new_password)
         return jsonify(response),200
     except Exception as e:
