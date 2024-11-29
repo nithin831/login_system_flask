@@ -1,12 +1,14 @@
-from flask import jsonify
+from flask import jsonify, Blueprint, request
 from utils.jwt_utils import generate_verification_token
 from utils.email_utils import send_reset_password_email
 from config import Config
 from user import *
 from validate import *
 
-# Request password reset
-def request_password_reset(data):
+request_pwd_reset = Blueprint('request_pwd_reset', __name__)
+@request_pwd_reset.post('/request-password-reset')
+def request_password_reset():
+    data = request.get_json()
     email = data.get('email')
     if not email:
         return jsonify({"error": "Email is required"}), 400

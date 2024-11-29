@@ -1,12 +1,13 @@
-from flask import jsonify
-from database import get_connection, release_connection
+from flask import jsonify, Blueprint, request
 from utils.jwt_utils import decode_verification_token
 from user import *
 
-def verify_user(token):
+activate_data = Blueprint('activate_data', __name__)
+@activate_data.get('/activate')
+def activate_data_endpoint():
+    token = request.args.get('token')
     if not token:
         return jsonify({"error": "Missing token"}), 400
-
     try:
         email = decode_verification_token(token)
         activate_user(email)

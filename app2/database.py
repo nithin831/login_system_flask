@@ -64,7 +64,8 @@ def setup_database():
                         created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         secret_key VARCHAR(255) NULL,
                         is_active BOOLEAN DEFAULT FALSE,
-                        blacklist BOOLEAN DEFAULT FALSE
+                        blacklist BOOLEAN DEFAULT FALSE,
+                        is_2fa BOOLEAN DEFAULT FALSE
                     );
                     """
                 )

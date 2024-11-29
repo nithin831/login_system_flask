@@ -1,11 +1,14 @@
-from flask import jsonify
+from flask import jsonify, Blueprint, request
 from user import *
 from utils.jwt_utils import generate_verification_token
 from utils.email_utils import send_verification_email
 from config import Config
 from validate import *
 
-def resend_activation(data):
+resend_mail = Blueprint('resend_mail', __name__)
+@resend_mail.post('/resend-activation')
+def resend_activation():
+    data = request.get_json()
     email = data.get('email')
     if not email:
         return jsonify({"error": "Email is required"}), 400

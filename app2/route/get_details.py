@@ -1,7 +1,10 @@
-from flask import request, jsonify
+from flask import jsonify, Blueprint, request
 from utils.jwt_utils import get_user_details_from_jwt
 
-def get_user_details(token):
+fetch = Blueprint('fetch', __name__)
+@fetch.get('/fetch')
+def get_details():
+    token = request.headers.get("Authorization")
     if not token:
         return jsonify({"error": "Authorization token required."}), 401
     

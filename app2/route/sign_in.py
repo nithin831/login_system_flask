@@ -1,15 +1,13 @@
 import bcrypt
-from flask import jsonify
+from flask import jsonify, Blueprint, request
 from user import *
 from validate import *
-from utils.jwt_utils import generate_jwt, generate_verification_token
-# from utils.redis_utils import test_redis_connection
+from utils.jwt_utils import generate_jwt
 
-# Check Redis connection before processing sign-in
-# test_redis_connection()
-
-def login(data):
-    # print(data)
+sign_in_bp = Blueprint('sign_in_bp', __name__)
+@sign_in_bp.post('/sign-in')
+def login():
+    data = request.get_json()
     email = data.get('email')
     password = data.get('password')
     if not email or not password:
@@ -19,7 +17,7 @@ def login(data):
         user = sign_in(email)
         if not user:
             return jsonify({"error": "User not found."}), 400
-        user_id, stored_password, stored_role, is_active, name, blacklist, secret_key = user
+        user_id, stored_password, stored_role, is_active, name, blacklist, is_2fa = user
         # Check if user is active
         if blacklist:
             return jsonify({"error": "User is Blacklisted. Please contact support."}), 400
@@ -27,20 +25,17 @@ def login(data):
             return jsonify({"error": "User not found."}), 400
         # Validate the password
         if bcrypt.checkpw(password.encode('utf-8'), stored_password.tobytes()):
-            # If TOTP is not enabled, generate QR code for first-time setup
-            if not secret_key:
-                secret_key = generate_totp_secret()
-                update_secret_key(secret_key, email)
-            token = generate_verification_token(email)
-            # Store JWT in Redis with expiration
-            # redis_key = f"jwt:{user_id}"
-            # redis_client.setex(redis_key, Config.JWT_EXPIRATION_SECONDS, token)
-            return jsonify({
-                "message": "Please enter the OTP from your authenticator app if already scanned, otherwise Scan the QR code to set up TOTP authentication.",
-                "enter_otp_link": f"/verify-totp?token={token}",
-                "qr_code_link": f"/qr-code?token={token}",
-                "note": "After scaning QR code, please do sign in again."}), 200
+            if is_2fa:
+                if request.args.get("otp"):
+                    totp_token = request.args.get("otp")
+                    verification = verify_totp(email, totp_token)
+                    if not verification:
+                        return jsonify({"error": "Invalid otp"}), 400
+                    return {"message": "Valid OTP. Login sucessful.", "token": generate_jwt(user_id, name, email, stored_role, is_active, blacklist)}
+                return {"message": "Enter the OTP from the Authenticator App."}
+            return {"message": "Login sucessful.", "token":generate_jwt(user_id, name, email, stored_role, is_active, blacklist)}
         else:
             return jsonify({"error": "User not found or incorrect credentials."}), 400
     except Exception as e:
+        # raise e
         return jsonify({"error": str(e)}), 400

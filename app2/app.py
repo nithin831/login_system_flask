@@ -1,74 +1,46 @@
-from flask import Flask, request
-from route.user_register import register_user
-from route.sign_in import login
-from route.get_user import get_user_details
-from route.verify import verify_user
+from flask import Flask
 from config import Config, mail
 from database import setup_database
-from route.blacklist_user import blacklist_user_endpoint
-from route.resend_verification import resend_activation
-from route.reset_password import reset_password_endpoint
-from route.request_reset_password import request_password_reset
-from route.change_password import change_password_route
-from route.verify_totp import verify_totp
-from route.qr_code import qr_code
+from route.disable_2fa import disable_auth
+from route.enable_2fa import enable_auth
+from route.user_register import user_register
+from route.admin_register import admin_register
+from route.sign_in import sign_in_bp
+from route.get_details import fetch
+from route.activate_data import activate_data
+from route.blacklist import blacklist
+from route.generate_secret_key import secret_key
+from route.resend_verification import resend_mail
+from route.reset_password import reset_password
+from route.request_reset_password import request_pwd_reset
+from route.change_password import change_password
 
 app = Flask(__name__)
-# app.secret_key = Config.SECRET_KEY
+app.secret_key = Config.LOGIN_SECRET_KEY
 app.config.from_object(Config)
 app.json.sort_keys = False
+
 # Initialize Flask-Mail with the app
 mail.init_app(app)
 setup_database()
 
-@app.route('/user/register', methods=['POST'])
-def user_register_route():
-    return register_user(data=request.get_json(), role="user")
-
-@app.route('/admin/register', methods=['POST'])
-def admin_register_route():
-    return register_user(data=request.get_json(), role="admin")
-
-@app.route('/sign_in', methods=['POST'])
-def signin_route():
-    return login(data=request.get_json())
-
-@app.route('/fetch', methods=['GET'])
-def get_user_route():
-    return get_user_details(token=request.headers.get("Authorization"))
-
-@app.route('/blacklist/email', methods=['PUT'])
-def blacklist_user():
-    return blacklist_user_endpoint(data=request.get_json())
-
-@app.route('/verify', methods=['GET'])
-def verify():
-    return verify_user(token = request.args.get('token'))
-
-@app.route('/resend-activation', methods=['POST'])
-def resend_mail():
-    return resend_activation(data=request.get_json())
-
-@app.route('/request-password-reset', methods=['POST'])
-def requesting_password_reset():
-    return request_password_reset(data=request.get_json())
-
-@app.route('/reset-password', methods=['POST'])
-def password_reset():
-    return reset_password_endpoint(token = request.args.get('token'), data=request.get_json())
-#Flask route for password change
-@app.route('/change_password', methods=['POST'])
-def change_password_():
-    return change_password_route(data = request.get_json())
-
-@app.route('/verify-totp', methods=['POST'])
-def totp_verification():
-    return verify_totp(token = request.args.get('token'), data=request.get_json())
-
-@app.route('/qr-code', methods=['GET'])
-def qr_code_generation():
-    return qr_code(token = request.args.get('token'))
+# Register blueprints
+app.register_blueprint(blacklist)
+app.register_blueprint(change_password)
+app.register_blueprint(fetch)
+app.register_blueprint(request_pwd_reset)
+app.register_blueprint(resend_mail)
+app.register_blueprint(reset_password)
+app.register_blueprint(sign_in_bp)
+app.register_blueprint(user_register)
+app.register_blueprint(admin_register)
+app.register_blueprint(activate_data)
+app.register_blueprint(secret_key)
+app.register_blueprint(enable_auth)
+app.register_blueprint(disable_auth)
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+# request.args.get("code")
 

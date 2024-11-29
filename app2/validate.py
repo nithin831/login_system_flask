@@ -1,4 +1,6 @@
 import re
+import pyotp
+from user import fetch_secret_key
 from flask import jsonify
 
 def validate_user_email(email):
@@ -35,3 +37,10 @@ def validate_user_password(password):
         # return jsonify({
         #     "message": "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character (@, $, !, %, *, ?, &)."
         # }), 400
+
+def verify_totp(email, totp_token):
+    secret = fetch_secret_key(email)
+    totp = pyotp.TOTP(secret[0])
+    if not totp.verify(totp_token):
+        return False
+    return True

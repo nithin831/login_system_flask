@@ -1,10 +1,13 @@
-from flask import jsonify
+from flask import jsonify, Blueprint, request
 from utils.jwt_utils import decode_verification_token
 from user import *
 from validate import *
 
-# Reset password after token verification
-def reset_password_endpoint(token, data):
+reset_password = Blueprint('reset_password', __name__)
+@reset_password.post('/reset-password')
+def reset_password_endpoint():
+    token = request.args.get('token')
+    data = request.get_json()
     new_password = data.get('new_password')
     if not token or not new_password:
         return jsonify({"error": "Token and new password are required"}), 400

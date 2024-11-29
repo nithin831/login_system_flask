@@ -2,7 +2,6 @@ import bcrypt
 from database import get_connection, release_connection
 from utils.jwt_utils import generate_jwt, generate_verification_token
 from config import Config
-# from utils.redis_utils import redis_client
 from utils.email_utils import send_verification_email
 
 def create_user(email, password, name, role):  
@@ -22,7 +21,7 @@ def create_user(email, password, name, role):
         conn.commit()
         # Generate a verification token and send it via email
         verification_token = generate_verification_token(email)
-        verification_link = f"{Config.FRONTEND_URL}/verify?token={verification_token}"
+        verification_link = f"{Config.FRONTEND_URL}/activate?token={verification_token}"
         send_verification_email(email, verification_link)
     finally:
         release_connection(conn)
@@ -32,7 +31,7 @@ def sign_in(email):
     conn = get_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, password, role, is_active, name, blacklist, secret_key FROM user_table WHERE email = %s", (email,))
+            cur.execute("SELECT id, password, role, is_active, name, blacklist, is_2fa FROM user_table WHERE email = %s", (email,))
             return cur.fetchone()
     finally:
         release_connection(conn)
@@ -72,7 +71,7 @@ def update_user(email, password, name, role):
         conn.commit()
         # Generate a new verification token
         verification_token = generate_verification_token(email)
-        verification_link = f"{Config.FRONTEND_URL}/verify?token={verification_token}"
+        verification_link = f"{Config.FRONTEND_URL}/activate?token={verification_token}"
         # Send the verification email
         send_verification_email(email, verification_link)
     finally:
@@ -98,7 +97,7 @@ def activate_user(email):
     finally:
         release_connection(conn)
 
-def blacklist_user(email):
+def blacklist_mail(email):
     """
     Blacklists the user by setting `blacklist` to true in PostgreSQL.
     """
@@ -116,11 +115,6 @@ def blacklist_user(email):
             user_id = cur.fetchone()
             if user_id:
                 conn.commit()
-                
-                # user_id = user_id[0]  # Extract user ID from the result
-                # Remove the JWT from Redis using the Redis key for this user
-                # redis_key = f"jwt:{user_id}"
-                # redis_client.delete(redis_key)
                 return {"message": f"User with email {email} has been blacklisted."}
             else:
                 return {"error": "User not found."}
@@ -164,5 +158,14 @@ def fetch_secret_key(email):
             # Check if email already exists in the database
             cur.execute("SELECT secret_key FROM user_table WHERE email = %s", (email,))
             return cur.fetchone()
+    finally:
+        release_connection(conn)
+
+def update_2fa(is_2fa, email):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE user_table SET is_2fa = %s WHERE email = %s", (is_2fa, email))
+        conn.commit()
     finally:
         release_connection(conn)
