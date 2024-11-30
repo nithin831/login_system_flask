@@ -13,7 +13,9 @@ def resend_activation():
     if not email:
         return jsonify({"error": "Email is required"}), 400
     try:
-        validate_user_email(email)
+        response, message = validate_user_email(email)
+        if not response:
+            return jsonify({"message": message})
         user = check_user_exist(data)
         if user:
             is_active, is_blacklisted = user

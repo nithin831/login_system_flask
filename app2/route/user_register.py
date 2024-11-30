@@ -12,10 +12,15 @@ def register_user():
     name = data.get('name')
     if not email or not password or not name:
         return jsonify({"error": "All fields are required"}), 400
-    try:  
-        validate_user_email(email)
-        validate_user_name(name)
-        validate_user_password(password)
+    try:
+        for validator, value in [
+            (validate_user_email, email),
+            (validate_user_name, name),
+            (validate_user_password, password),
+        ]:
+            response, message = validator(value)
+            if not response:
+                return jsonify({"message": message})
         # checks wheather the user exist or not
         user_record = check_user_exist(data)
         if not user_record:
@@ -34,5 +39,6 @@ def register_user():
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
     
     except Exception as e:
+        # raise e
         return jsonify({"error": str(e)}), 500
     

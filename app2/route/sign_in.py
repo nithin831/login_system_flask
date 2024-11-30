@@ -13,7 +13,9 @@ def login():
     if not email or not password:
         return jsonify({"error": "Email and password are required."}), 400
     try:
-        validate_user_email(email)
+        response, message = validate_user_email(email)
+        if not response:
+            return jsonify({"message": message})
         user = sign_in(email)
         if not user:
             return jsonify({"error": "User not found."}), 400

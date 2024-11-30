@@ -9,7 +9,6 @@ from route.sign_in import sign_in_bp
 from route.get_details import fetch
 from route.activate_data import activate_data
 from route.blacklist import blacklist
-from route.generate_secret_key import secret_key
 from route.resend_verification import resend_mail
 from route.reset_password import reset_password
 from route.request_reset_password import request_pwd_reset
@@ -35,7 +34,6 @@ app.register_blueprint(sign_in_bp)
 app.register_blueprint(user_register)
 app.register_blueprint(admin_register)
 app.register_blueprint(activate_data)
-app.register_blueprint(secret_key)
 app.register_blueprint(enable_auth)
 app.register_blueprint(disable_auth)
 

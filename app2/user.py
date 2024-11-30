@@ -112,33 +112,17 @@ def blacklist_mail(email):
                 RETURNING id;
                 """, (email,)
             )
-            user_id = cur.fetchone()
-            if user_id:
-                conn.commit()
-                return {"message": f"User with email {email} has been blacklisted."}
-            else:
-                return {"error": "User not found."}
+            conn.commit()
     finally:
         release_connection(conn)
 
-def change_password_logic(email, current_password, new_password):
+def fetch_password(email):
     conn = get_connection()
     try:
         with conn.cursor() as cur:
             # Fetch user details
             cur.execute("SELECT password FROM user_table WHERE email = %s", (email,))
-            user = cur.fetchone()
-            stored_password = user
-            # Validate the current password
-            if not bcrypt.checkpw(current_password.encode('utf-8'), stored_password[0].tobytes()):
-                # return {"error": "Current password is incorrect."}, 401
-                raise Exception("Current password is incorrect.")
-            # Hash the new password
-            hashed_new_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
-            # Update the password in the database
-            cur.execute("UPDATE user_table SET password = %s WHERE email = %s", (hashed_new_password, email))
-            conn.commit()
-            return {"message": "Password updated successfully."}
+            return cur.fetchone()
     finally:
         release_connection(conn)
 

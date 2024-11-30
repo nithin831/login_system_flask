@@ -12,11 +12,13 @@ def blacklist_endpoint():
     if not email:
         return jsonify({"error": "Email is required."}), 400
     try:
-        validate_user_email(email)
+        response, message = validate_user_email(email)
+        if not response:
+            return jsonify({"message": message}), 400
+        if not check_user_exist(data):
+            return jsonify({"error": "User not found."}), 400
         # Call the function to blacklist the user
-        result = blacklist_mail(email)
-        if "error" in result:
-            return jsonify(result), 404  # Not found if user doesn't exist
-        return jsonify(result), 200  # Success response if user was blacklisted
+        blacklist_mail(email)
+        return {"message": f"User with email {email} has been blacklisted."}
     except Exception as e:
         return {"error": str(e)}
