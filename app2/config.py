@@ -1,8 +1,7 @@
 from os import environ
 
 class Config:
-    MAIL_SECRET_KEY = environ.get("MAIL_SECRET_KEY")  # for jwt
-    LOGIN_SECRET_KEY = environ.get("LOGIN_SECRET_KEY") #for jwt
+    SECRET_KEY = environ.get("SECRET_KEY")  # for jwt
     DATABASE_URL = environ.get('DB_URL')
     JWT_EXPIRATION_SECONDS = 3600
     # REDIS_HOST = "redis"

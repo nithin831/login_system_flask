@@ -1,5 +1,5 @@
 from flask import jsonify, Blueprint, request
-from utils.jwt_utils import decode_verification_token
+from utils.jwt_utils import decode_jwt_token
 from user import *
 from validate import *
 
@@ -15,8 +15,8 @@ def reset_password_endpoint():
         response, message = validate_user_password(new_password)
         if not response:
             return jsonify({"message": message})
-        email = decode_verification_token(token)  # Decode the token to get email
-        update_new_password(new_password, email)
+        payload = decode_jwt_token(token)  # Decode the token to get email
+        update_new_password(new_password, payload["email"])
         return jsonify({"message": "Password has been reset successfully."}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400

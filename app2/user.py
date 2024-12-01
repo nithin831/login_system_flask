@@ -1,6 +1,6 @@
 import bcrypt
 from database import get_connection, release_connection
-from utils.jwt_utils import generate_jwt, generate_verification_token
+from utils.jwt_utils import generate_login_jwt_token, generate_verification_jwt_token
 from config import Config
 from utils.email_utils import send_verification_email
 
@@ -20,7 +20,7 @@ def create_user(email, password, name, role):
             })
         conn.commit()
         # Generate a verification token and send it via email
-        verification_token = generate_verification_token(email)
+        verification_token = generate_verification_jwt_token(email)
         verification_link = f"{Config.FRONTEND_URL}/activate?token={verification_token}"
         send_verification_email(email, verification_link)
     finally:
@@ -31,7 +31,7 @@ def sign_in(email):
     conn = get_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, password, role, is_active, name, blacklist, is_2fa FROM user_table WHERE email = %s", (email,))
+            cur.execute("SELECT password, role, is_active, name, blacklist, is_2fa FROM user_table WHERE email = %s", (email,))
             return cur.fetchone()
     finally:
         release_connection(conn)
@@ -70,7 +70,7 @@ def update_user(email, password, name, role):
             })
         conn.commit()
         # Generate a new verification token
-        verification_token = generate_verification_token(email)
+        verification_token = generate_verification_jwt_token(email)
         verification_link = f"{Config.FRONTEND_URL}/activate?token={verification_token}"
         # Send the verification email
         send_verification_email(email, verification_link)
@@ -139,7 +139,6 @@ def fetch_secret_key(email):
     conn = get_connection()
     try:
         with conn.cursor() as cur:
-            # Check if email already exists in the database
             cur.execute("SELECT secret_key FROM user_table WHERE email = %s", (email,))
             return cur.fetchone()
     finally:

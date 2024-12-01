@@ -1,5 +1,5 @@
 from flask import jsonify, Blueprint, request
-from utils.jwt_utils import generate_verification_token
+from utils.jwt_utils import generate_verification_jwt_token
 from utils.email_utils import send_reset_password_email
 from config import Config
 from user import *
@@ -27,7 +27,7 @@ def request_password_reset():
             return jsonify({"error": "User not found"}), 404
 
         # Generate password reset token
-        reset_token = generate_verification_token(email)
+        reset_token = generate_verification_jwt_token(email)
 
         # Send the password reset email
         reset_link = f"{Config.FRONTEND_URL}/reset-password?token={reset_token}"

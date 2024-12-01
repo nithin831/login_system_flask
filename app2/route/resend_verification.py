@@ -1,6 +1,6 @@
 from flask import jsonify, Blueprint, request
 from user import *
-from utils.jwt_utils import generate_verification_token
+from utils.jwt_utils import generate_verification_jwt_token
 from utils.email_utils import send_verification_email
 from config import Config
 from validate import *
@@ -26,8 +26,8 @@ def resend_activation():
         else:
             return jsonify({"error": "No User found, Please register again!"}), 404
         # Generate a new verification token
-        verification_token = generate_verification_token(email)
-        verification_link = f"{Config.FRONTEND_URL}/verify?token={verification_token}"
+        verification_token = generate_verification_jwt_token(email)
+        verification_link = f"{Config.FRONTEND_URL}/activate?token={verification_token}"
         # Send the verification email
         send_verification_email(email, verification_link)
         return jsonify({"message": "A new activation email has been sent. Please check your inbox."}), 200

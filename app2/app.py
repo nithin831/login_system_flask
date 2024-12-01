@@ -15,7 +15,7 @@ from route.request_reset_password import request_pwd_reset
 from route.change_password import change_password
 
 app = Flask(__name__)
-app.secret_key = Config.LOGIN_SECRET_KEY
+app.secret_key = Config.SECRET_KEY
 app.config.from_object(Config)
 app.json.sort_keys = False
 

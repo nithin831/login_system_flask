@@ -10,7 +10,7 @@ def is_sign_in(func):
         if not header:
             return {"error": "Sign in is required."}
         try:
-            payload = jwt.decode(header, Config.LOGIN_SECRET_KEY, algorithms=["HS256"])
+            payload = jwt.decode(header, Config.SECRET_KEY, algorithms=["HS256"])
             result = func(*args, email=payload["email"], **kwargs)
             return result
         except jwt.ExpiredSignatureError:
