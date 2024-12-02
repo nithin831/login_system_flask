@@ -33,6 +33,10 @@ def register_user():
         if not user_record:
             # If user is not found in database, then register
             create_user(email, password, name, role)  # Register the user
+            # Generate a verification token and send it via email
+            verification_token = generate_verification_jwt_token(email)
+            verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
+            send_verification_email(email, verification_link)
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
         #  if user record is present in database
         is_active, is_blacklisted = user_record
@@ -44,6 +48,10 @@ def register_user():
         else:
             # If is_active is FALSE and email is not blacklisted, proceed with registration, with the given data by updating the existing data in the database
             update_user(email, password, name, role)
+            # Generate a verification token and send it via email
+            verification_token = generate_verification_jwt_token(email)
+            verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
+            send_verification_email(email, verification_link)
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
     except Exception as e:
         # raise e
@@ -72,6 +80,10 @@ def register_admin():
         if not user_record:
             # If user is not found in database, then register
             create_user(email, password, name, role)  # Register the user
+            # Generate a verification token and send it via email
+            verification_token = generate_verification_jwt_token(email)
+            verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
+            send_verification_email(email, verification_link)
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
         #  if user record is present in database
         is_active, is_blacklisted = user_record
@@ -82,6 +94,10 @@ def register_admin():
         else:
             # If is_active is FALSE and email is not blacklisted, proceed with registration, with the given data by updating the existing data in the database
             update_user(email, password, name, role)
+            # Generate a verification token and send it via email
+            verification_token = generate_verification_jwt_token(email)
+            verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
+            send_verification_email(email, verification_link)
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
