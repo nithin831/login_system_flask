@@ -21,13 +21,12 @@ def create_user(email, password, name, role):
         conn.commit()
         # Generate a verification token and send it via email
         verification_token = generate_verification_jwt_token(email)
-        verification_link = f"{Config.FRONTEND_URL}/activate?token={verification_token}"
+        verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
         send_verification_email(email, verification_link)
     finally:
         release_connection(conn)
 
-def sign_in(email):
-    """Signs in a user by verifying email and password, then returns a JWT on success."""
+def fetch_sign_in(email):
     conn = get_connection()
     try:
         with conn.cursor() as cur:
@@ -71,7 +70,7 @@ def update_user(email, password, name, role):
         conn.commit()
         # Generate a new verification token
         verification_token = generate_verification_jwt_token(email)
-        verification_link = f"{Config.FRONTEND_URL}/activate?token={verification_token}"
+        verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
         # Send the verification email
         send_verification_email(email, verification_link)
     finally:

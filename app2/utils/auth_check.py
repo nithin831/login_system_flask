@@ -26,7 +26,7 @@ def is_admin(func):
         if not header:
             return {"error": "Sign in is required."}
         try:
-            payload = jwt.decode(header, Config.LOGIN_SECRET_KEY, algorithms=["HS256"])
+            payload = jwt.decode(header, Config.SECRET_KEY, algorithms=["HS256"])
             role = payload["role"]
             if role == "admin":
                 result = func(*args, **kwargs)

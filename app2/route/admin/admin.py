@@ -3,8 +3,8 @@ from user import *
 from utils.auth_check import is_admin
 from validate import *
 
-blacklist = Blueprint('blacklist', __name__)
-@blacklist.put('/blacklist/email')
+admin = Blueprint('admin', __name__)
+@admin.put('/blacklist/email')
 @is_admin
 def blacklist_endpoint():
     data = request.get_json()
