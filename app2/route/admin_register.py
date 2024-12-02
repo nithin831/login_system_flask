@@ -2,11 +2,11 @@ from flask import jsonify, Blueprint, request
 from user import *
 from validate import *
 
-user_register = Blueprint('user_register', __name__)
-@user_register.post('/user/register')
-def register_user():
+admin_register = Blueprint('admin_register', __name__)
+@admin_register.post('/admin/register')
+def register_admin():
     data = request.get_json()
-    role = "user"
+    role = "admin"
     email = data.get('email')
     password = data.get('password')
     name = data.get('name')
@@ -25,7 +25,7 @@ def register_user():
         user_record = check_user_exist(data)
         if not user_record:
             # If user is not found in database, then register
-            create_user(email, password, name, role) # Register the user
+            create_user(email, password, name, role)  # Register the user
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
         #  if user record is present in database
         is_active, is_blacklisted = user_record
@@ -37,8 +37,6 @@ def register_user():
             # If is_active is FALSE and email is not blacklisted, proceed with registration, with the given data by updating the existing data in the database
             update_user(email, password, name, role)
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
-    
     except Exception as e:
-        # raise e
         return jsonify({"error": str(e)}), 500
-    
+

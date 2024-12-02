@@ -1,7 +1,7 @@
 from os import environ
 
 class Config:
-    SECRET_KEY = environ.get("SECRET_KEY")  # or load from environment
+    SECRET_KEY = environ.get("SECRET_KEY")  # for jwt
     DATABASE_URL = environ.get('DB_URL')
     JWT_EXPIRATION_SECONDS = 3600
     # REDIS_HOST = "redis"

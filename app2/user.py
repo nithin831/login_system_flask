@@ -1,8 +1,7 @@
 import bcrypt
 from database import get_connection, release_connection
-from utils.jwt_utils import generate_jwt, generate_verification_token
+from utils.jwt_utils import generate_login_jwt_token, generate_verification_jwt_token
 from config import Config
-# from utils.redis_utils import redis_client
 from utils.email_utils import send_verification_email
 
 def create_user(email, password, name, role):  
@@ -21,37 +20,19 @@ def create_user(email, password, name, role):
             })
         conn.commit()
         # Generate a verification token and send it via email
-        verification_token = generate_verification_token(email)
-        verification_link = f"{Config.FRONTEND_URL}/verify?token={verification_token}"
+        verification_token = generate_verification_jwt_token(email)
+        verification_link = f"{Config.FRONTEND_URL}/activate?token={verification_token}"
         send_verification_email(email, verification_link)
     finally:
         release_connection(conn)
 
-def sign_in(email, password):
+def sign_in(email):
     """Signs in a user by verifying email and password, then returns a JWT on success."""
     conn = get_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, password, role, is_active, name, blacklist FROM user_table WHERE email = %s", (email,))
-            user = cur.fetchone()
-            if not user:
-                return {"error": "User not found."}
-            user_id, stored_password, stored_role, is_active, name, blacklist= user
-            # Check if user is active
-            if blacklist:
-                return {"error": "User is Blacklisted. Please contact support."}
-            if not is_active:
-                return {"error": "User not found."}
-            # Validate the password
-            if bcrypt.checkpw(password.encode('utf-8'), stored_password.tobytes()):
-                # Generate JWT using the utility function
-                token = generate_jwt(user_id, name, email, stored_role, is_active, blacklist)
-                # Store JWT in Redis with expiration
-                # redis_key = f"jwt:{user_id}"
-                # redis_client.setex(redis_key, Config.JWT_EXPIRATION_SECONDS, token)
-                return {"message": "Sign-in successful.", "token": token}
-            else:
-                return {"error": "User not found or incorrect credentials."}
+            cur.execute("SELECT password, role, is_active, name, blacklist, is_2fa FROM user_table WHERE email = %s", (email,))
+            return cur.fetchone()
     finally:
         release_connection(conn)
         
@@ -89,8 +70,8 @@ def update_user(email, password, name, role):
             })
         conn.commit()
         # Generate a new verification token
-        verification_token = generate_verification_token(email)
-        verification_link = f"{Config.FRONTEND_URL}/verify?token={verification_token}"
+        verification_token = generate_verification_jwt_token(email)
+        verification_link = f"{Config.FRONTEND_URL}/activate?token={verification_token}"
         # Send the verification email
         send_verification_email(email, verification_link)
     finally:
@@ -116,7 +97,7 @@ def activate_user(email):
     finally:
         release_connection(conn)
 
-def blacklist_user(email):
+def blacklist_mail(email):
     """
     Blacklists the user by setting `blacklist` to true in PostgreSQL.
     """
@@ -131,39 +112,43 @@ def blacklist_user(email):
                 RETURNING id;
                 """, (email,)
             )
-            user_id = cur.fetchone()
-            if user_id:
-                conn.commit()
-                
-                # user_id = user_id[0]  # Extract user ID from the result
-                # Remove the JWT from Redis using the Redis key for this user
-                # redis_key = f"jwt:{user_id}"
-                # redis_client.delete(redis_key)
-                return {"message": f"User with email {email} has been blacklisted."}
-            else:
-                return {"error": "User not found."}
+            conn.commit()
     finally:
         release_connection(conn)
 
-def change_password_logic(email, current_password, new_password):
+def fetch_password(email):
     conn = get_connection()
     try:
         with conn.cursor() as cur:
             # Fetch user details
             cur.execute("SELECT password FROM user_table WHERE email = %s", (email,))
-            user = cur.fetchone()
-            stored_password = user
-            # Validate the current password
-            if not bcrypt.checkpw(current_password.encode('utf-8'), stored_password[0].tobytes()):
-                # return {"error": "Current password is incorrect."}, 401
-                raise Exception("Current password is incorrect.")
-            if bcrypt.checkpw(new_password.encode('utf-8'), stored_password[0].tobytes()):
-                raise Exception("The new password cannot be the same as the current password.")
-            # Hash the new password
-            hashed_new_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
-            # Update the password in the database
-            cur.execute("UPDATE user_table SET password = %s WHERE email = %s", (hashed_new_password, email))
-            conn.commit()
-            return {"message": "Password updated successfully."}
+            return cur.fetchone()
+    finally:
+        release_connection(conn)
+
+def update_secret_key(secret_key, email):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE user_table SET secret_key = %s WHERE email = %s", (secret_key, email))
+        conn.commit()
+    finally:
+        release_connection(conn)
+
+def fetch_secret_key(email):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT secret_key FROM user_table WHERE email = %s", (email,))
+            return cur.fetchone()
+    finally:
+        release_connection(conn)
+
+def update_2fa(is_2fa, email):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE user_table SET is_2fa = %s WHERE email = %s", (is_2fa, email))
+        conn.commit()
     finally:
         release_connection(conn)
