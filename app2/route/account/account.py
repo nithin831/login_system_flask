@@ -8,12 +8,21 @@ from utils.jwt_utils import *
 from utils.email_utils import *
 from utils.auth_check import is_sign_in
 
+from route.admin.admin import update_user
+from user import check_user_exist, create_user, activate_user, update_new_password, fetch_sign_in, fetch_password, \
+    update_2fa, update_secret_key
+from utils.email_utils import send_verification_email, send_reset_password_email
+from utils.jwt_utils import generate_verification_jwt_token, decode_jwt_token, generate_2fa_verification_jwt_token, \
+    generate_login_jwt_token
+from validate import validate_user_email, validate_user_name, validate_user_password, verify_totp
+
 account = Blueprint('account', __name__)
 
 @account.post('/user/register')
 def register_user():
     data = request.get_json()
     role = "user"
+    is_active = False
     email = data.get('email')
     password = data.get('password')
     name = data.get('name')
@@ -32,7 +41,7 @@ def register_user():
         user_record = check_user_exist(data)
         if not user_record:
             # If user is not found in database, then register
-            create_user(email, password, name, role)  # Register the user
+            create_user(email, password, name, role, is_active)  # Register the user
             # Generate a verification token and send it via email
             verification_token = generate_verification_jwt_token(email)
             verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
@@ -61,6 +70,7 @@ def register_user():
 def register_admin():
     data = request.get_json()
     role = "admin"
+    is_active = False
     email = data.get('email')
     password = data.get('password')
     name = data.get('name')
@@ -79,7 +89,7 @@ def register_admin():
         user_record = check_user_exist(data)
         if not user_record:
             # If user is not found in database, then register
-            create_user(email, password, name, role)  # Register the user
+            create_user(email, password, name, role, is_active)  # Register the user
             # Generate a verification token and send it via email
             verification_token = generate_verification_jwt_token(email)
             verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
@@ -93,7 +103,7 @@ def register_admin():
             return jsonify({"error": "User is already registered."}), 400
         else:
             # If is_active is FALSE and email is not blacklisted, proceed with registration, with the given data by updating the existing data in the database
-            update_user(email, password, name, role)
+            update_user(email, password, name, role, is_active)
             # Generate a verification token and send it via email
             verification_token = generate_verification_jwt_token(email)
             verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"

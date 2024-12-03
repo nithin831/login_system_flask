@@ -23,10 +23,12 @@ def is_admin(func):
     @wraps(func)
     def decorator(*args, **kwargs):
         header = request.headers.get("Authorization")
+        # print(header)
         if not header:
             return {"error": "Sign in is required."}
         try:
             payload = jwt.decode(header, Config.SECRET_KEY, algorithms=["HS256"])
+            # print((payload))
             role = payload["role"]
             if role == "admin":
                 result = func(*args, **kwargs)

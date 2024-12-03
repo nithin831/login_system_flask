@@ -1,5 +1,6 @@
 from flask_mail import Message
 from config import mail
+from datetime import datetime, timedelta
 
 # send an verification link to activate an account
 def send_verification_email(email, link):
@@ -37,4 +38,49 @@ def send_reset_password_email(email, reset_link):
     YourApp Team
     """
     msg = Message(subject, recipients=[email], body=body)
+    mail.send(msg)
+
+def send_create_user_email_from_admin(user_email, user_name, new_password):
+    """
+    Sends an email to the user notifying them about their password change.
+    """
+    # Email content
+    subject = "Your account created by admin"
+    expiration_date = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
+    body = f"""
+    Hi {user_name},
+
+    Your account has been created successfully by admin. For security reasons, please change your password before {expiration_date}.
+    
+    Your  mail id : {user_email}
+    Your temporary password is: {new_password}
+
+    To update your password, please log in to your account with the given credentials and navigate to the 'Change Password' section.
+
+    If you did not request this change, please contact support immediately.
+
+    Regards,
+    Your Company Support Team
+    """
+    msg = Message(subject, recipients=[user_email], body=body)
+    mail.send(msg)
+
+
+def send_account_update_email(user_email, user_name):
+    """
+    Sends an email to the user notifying them about the successful update of their account details.
+    """
+    # Email content
+    subject = "Your Account Details Have Been Successfully Updated"
+    body = f"""
+    Hi {user_name},
+
+    We're happy to inform you that your account details have been successfully updated.
+
+    If you did not make these changes or have any concerns, please contact our support team immediately.
+
+    Regards,
+    Your Company Support Team
+    """
+    msg = Message(subject, recipients=[user_email], body=body)
     mail.send(msg)

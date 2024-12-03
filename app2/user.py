@@ -2,21 +2,22 @@ import bcrypt
 from database import get_connection, release_connection
 from utils.jwt_utils import generate_login_jwt_token, generate_verification_jwt_token
 from config import Config
-from utils.email_utils import send_verification_email
+from utils.email_utils import send_verification_email, send_account_update_email
 
-def create_user(email, password, name, role):  
+def create_user(email, password, name, role, is_active):
     conn = get_connection()
     try:
         with conn.cursor() as cur:
             hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
             cur.execute("""
                 INSERT INTO user_table (email, password, name, role, created_on, is_active, blacklist)
-                VALUES (%(email)s, %(password)s, %(name)s, %(role)s, NOW(), FALSE, FALSE)
+                VALUES (%(email)s, %(password)s, %(name)s, %(role)s, NOW(), %(is_active)s, FALSE)
             """, {
                 'email': email,
                 'password': hashed_password,
                 'name': name,
-                'role': role
+                'role': role,
+                'is_active': is_active
             })
         conn.commit()
     finally:
@@ -42,33 +43,29 @@ def check_user_exist(data):
     finally:
         release_connection(conn)
                 
-# update user 
-def update_user(email, password, name, role):  
+# update user
+def update_user(email, password, name, role, is_active):
     conn = get_connection()
     try:
         with conn.cursor() as cur:
             hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
             cur.execute("""
-                UPDATE user_table 
+                UPDATE user_table
                 SET password = %(password)s,
                     name = %(name)s,
                     role = %(role)s,
                     created_on = NOW(),
-                    is_active = FALSE,
+                    is_active = %(is_active)s,
                     blacklist = FALSE
                 WHERE email = %(email)s
             """, {
                 'email': email,
                 'password': hashed_password,
                 'name': name,
-                'role': role
+                'role': role,
+                'is_active': is_active
             })
         conn.commit()
-        # Generate a new verification token
-        verification_token = generate_verification_jwt_token(email)
-        verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
-        # Send the verification email
-        send_verification_email(email, verification_link)
     finally:
         release_connection(conn)
 
@@ -147,3 +144,43 @@ def update_2fa(is_2fa, email):
         conn.commit()
     finally:
         release_connection(conn)
+
+
+def fetch_users_from_db(page, per_page, email=None, name=None, role=None, is_active=None, search=None):
+    query = "SELECT * FROM user_table"
+    filters = []
+    params = []
+
+    if email:
+        filters.append("email = %s")
+        params.append(email)
+    if name:
+        filters.append("name ILIKE %s")
+        params.append(f"%{name}%")
+    if role:
+        filters.append("role = %s")
+        params.append(role)
+    if is_active:
+        filters.append("is_active = %s")
+        params.append(is_active)
+    if search:
+        filters.append("(email ILIKE %s OR name ILIKE %s OR role ILIKE %s OR is_active ILIKE %s)")
+        params.extend([f"%{search}%", f"%{search}%", f"%{search}%", f"%{search}%"])
+
+    if filters:
+        query += " WHERE " + " AND ".join(filters)
+    query += " ORDER BY created_on DESC LIMIT %s OFFSET %s"
+    params.extend([per_page, (page - 1) * per_page])
+
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(query, tuple(params))
+            return cursor.fetchall()
+    finally:
+        release_connection(conn)
+
+
+
+
+

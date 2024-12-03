@@ -24,7 +24,6 @@ def validate_user_password(password):
     # Check password length
     if password and len(password) < 8:
         return False, "Password must be at least 8 characters long."
-
     # Combined regex check for uppercase, lowercase, digit, and special character
     if not all([
         re.search(r"[A-Z]", password),      # Must contain at least one uppercase letter
@@ -41,3 +40,21 @@ def verify_totp(email, totp_token):
     if not totp.verify(totp_token):
         return False
     return True
+
+def validate_pagination(page, per_page):
+    try:
+        page = int(page)
+        print(page)
+        if page < 1:
+            return False, "Page number must be a positive integer."
+    except ValueError:
+        return False, "Page number must be an integer."
+    # Validate per_page
+    try:
+        per_page = int(per_page)
+        print(per_page)
+        if per_page < 1 or per_page > 10:
+            return False, "Per page must be between 1 and 10."
+    except ValueError:
+        return False, "Per page must be an integer."
+    return True, None
