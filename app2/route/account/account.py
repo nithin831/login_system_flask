@@ -2,33 +2,25 @@ from flask import jsonify, Blueprint, request
 import bcrypt
 import pyotp
 from user import *
-from config import Config
 from validate import *
 from utils.jwt_utils import *
 from utils.email_utils import *
 from utils.auth_check import is_sign_in
-
 from route.admin.admin import update_user
-from user import check_user_exist, create_user, activate_user, update_new_password, fetch_sign_in, fetch_password, \
-    update_2fa, update_secret_key
-from utils.email_utils import send_verification_email, send_reset_password_email
-from utils.jwt_utils import generate_verification_jwt_token, decode_jwt_token, generate_2fa_verification_jwt_token, \
-    generate_login_jwt_token
-from validate import validate_user_email, validate_user_name, validate_user_password, verify_totp
 
 account = Blueprint('account', __name__)
 
 @account.post('/user/register')
 def register_user():
-    data = request.get_json()
-    role = "user"
-    is_active = False
-    email = data.get('email')
-    password = data.get('password')
-    name = data.get('name')
-    if not email or not password or not name:
-        return jsonify({"error": "All fields are required"}), 400
     try:
+        data = request.get_json()
+        role = "user"
+        is_active = False
+        email = data.get('email')
+        password = data.get('password')
+        name = data.get('name')
+        if not email or not password or not name:
+            return jsonify({"error": "All fields are required"}), 400
         for validator, value in [
             (validate_user_email, email),
             (validate_user_name, name),
@@ -50,8 +42,7 @@ def register_user():
         #  if user record is present in database
         is_active, is_blacklisted = user_record
         if is_blacklisted:
-            return jsonify({
-                               "error": "This email address is blacklisted and cannot be used for registration, please contact support."}), 400
+            return jsonify({"error": "This email address is blacklisted and cannot be used for registration, please contact support."}), 400
         if is_active:
             return jsonify({"error": "User is already registered."}), 400
         else:
@@ -68,15 +59,15 @@ def register_user():
 
 @account.post('/admin/register')
 def register_admin():
-    data = request.get_json()
-    role = "admin"
-    is_active = False
-    email = data.get('email')
-    password = data.get('password')
-    name = data.get('name')
-    if not email or not password or not name:
-        return jsonify({"error": "All fields are required"}), 400
     try:
+        data = request.get_json()
+        role = "admin"
+        is_active = False
+        email = data.get('email')
+        password = data.get('password')
+        name = data.get('name')
+        if not email or not password or not name:
+            return jsonify({"error": "All fields are required"}), 400
         for validator, value in [
             (validate_user_email, email),
             (validate_user_name, name),
@@ -114,10 +105,10 @@ def register_admin():
 
 @account.get('/activate')
 def activate_data_endpoint():
-    token = request.args.get('token')
-    if not token:
-        return jsonify({"error": "Missing token"}), 400
     try:
+        token = request.args.get('token')
+        if not token:
+            return jsonify({"error": "Missing token"}), 400
         payload = decode_jwt_token(token)
         activate_user(payload["email"])
         return jsonify({"message": "Email verified successfully!"}), 200
@@ -126,11 +117,11 @@ def activate_data_endpoint():
 
 @account.post('/resend-activation')
 def resend_activation():
-    data = request.get_json()
-    email = data.get('email')
-    if not email:
-        return jsonify({"error": "Email is required"}), 400
     try:
+        data = request.get_json()
+        email = data.get('email')
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
         response, message = validate_user_email(email)
         if not response:
             return jsonify({"message": message})
@@ -154,11 +145,11 @@ def resend_activation():
 
 @account.post('/request-password-reset')
 def request_password_reset():
-    data = request.get_json()
-    email = data.get('email')
-    if not email:
-        return jsonify({"error": "Email is required"}), 400
     try:
+        data = request.get_json()
+        email = data.get('email')
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
         response, message = validate_user_email(email)
         if not response:
             return jsonify({"message": message})
@@ -182,12 +173,12 @@ def request_password_reset():
 
 @account.post('/reset-password')
 def reset_password_endpoint():
-    token = request.args.get('token')
-    data = request.get_json()
-    new_password = data.get('new_password')
-    if not token or not new_password:
-        return jsonify({"error": "Token and new password are required"}), 400
     try:
+        token = request.args.get('token')
+        data = request.get_json()
+        new_password = data.get('new_password')
+        if not token or not new_password:
+            return jsonify({"error": "Token and new password are required"}), 400
         response, message = validate_user_password(new_password)
         if not response:
             return jsonify({"message": message})
@@ -199,12 +190,12 @@ def reset_password_endpoint():
 
 @account.post('/sign-in')
 def login():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    if not email or not password:
-        return jsonify({"error": "Email and password are required."}), 400
     try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+        if not email or not password:
+            return jsonify({"error": "Email and password are required."}), 400
         response, message = validate_user_email(email)
         if not response:
             return jsonify({"message": message})
@@ -231,10 +222,10 @@ def login():
 
 @account.post('/sign-in/verify-otp')
 def login_for_2fa():
-    header = request.headers.get("Authorization")
-    if not header:
-        return {"error": "Sign in is required."}
     try:
+        header = request.headers.get("Authorization")
+        if not header:
+            return {"error": "Sign in is required."}
         payload = decode_jwt_token(header)
         if not payload["is_2fa"]:
             return {"error": "Access Denied."}
@@ -272,12 +263,12 @@ def get_details():
 @account.post('/change-password')
 @is_sign_in
 def change_password_route(email):
-    data = request.get_json()
-    current_password = data.get('current_password')
-    new_password = data.get('new_password')
-    if not current_password or not new_password:
-        return {"error": "Current password, and new password are required."}, 400
     try:
+        data = request.get_json()
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        if not current_password or not new_password:
+            return {"error": "Current password, and new password are required."}, 400
         response, message = validate_user_password(new_password)
         if not response:
             return jsonify({"message": message})
@@ -317,11 +308,11 @@ def enable_2fa(email):
 @account.post('/2fa/disable-2fa')
 @is_sign_in
 def disable_2fa(email):
-    data = request.get_json()
-    totp_token = data.get('totp_token')
-    if not totp_token:
-        return {"error": "Please enter otp."}
     try:
+        data = request.get_json()
+        totp_token = data.get('totp_token')
+        if not totp_token:
+            return {"error": "Please enter otp."}
         verification = verify_totp(email, totp_token)
         if not verification:
             return jsonify({"error": "Invalid otp"}), 400

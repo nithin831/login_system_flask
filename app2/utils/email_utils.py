@@ -65,15 +65,14 @@ def send_create_user_email_from_admin(user_email, user_name, new_password):
     msg = Message(subject, recipients=[user_email], body=body)
     mail.send(msg)
 
-
-def send_account_update_email(user_email, user_name):
+def send_account_update_email(user_email):
     """
     Sends an email to the user notifying them about the successful update of their account details.
     """
     # Email content
     subject = "Your Account Details Have Been Successfully Updated"
     body = f"""
-    Hi {user_name},
+    Hi Sir/Madam,
 
     We're happy to inform you that your account details have been successfully updated.
 

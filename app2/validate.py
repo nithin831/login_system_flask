@@ -47,7 +47,7 @@ def validate_pagination(page, per_page):
         print(page)
         if page < 1:
             return False, "Page number must be a positive integer."
-    except ValueError:
+    except Exception:
         return False, "Page number must be an integer."
     # Validate per_page
     try:
@@ -55,6 +55,6 @@ def validate_pagination(page, per_page):
         print(per_page)
         if per_page < 1 or per_page > 10:
             return False, "Per page must be between 1 and 10."
-    except ValueError:
+    except Exception:
         return False, "Per page must be an integer."
     return True, None
