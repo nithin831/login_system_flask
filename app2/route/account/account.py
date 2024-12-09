@@ -41,14 +41,13 @@ def register_user():
             send_verification_email(email, verification_link)
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
         #  if user record is present in database
-        is_active, is_blacklisted = user_record
-        if is_blacklisted:
+        if user_record["blacklist"]:
             return jsonify({"error": "This email address is blacklisted and cannot be used for registration, please contact support."}), 400
-        if is_active:
+        if user_record["is_active"]:
             return jsonify({"error": "User is already registered."}), 400
         else:
             # If is_active is FALSE and email is not blacklisted, proceed with registration, with the given data by updating the existing data in the database
-            update_user(email, password, name, role)
+            update_user(email, password, name, role, is_active)
             # Generate a verification token and send it via email
             verification_token = generate_verification_jwt_token(email)
             verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
@@ -89,10 +88,9 @@ def register_admin():
             send_verification_email(email, verification_link)
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
         #  if user record is present in database
-        is_active, is_blacklisted = user_record
-        if is_blacklisted:
+        if user_record["blacklist"]:
             return jsonify({"error": "This email address is blacklisted and cannot be used for registration, please contact support."}), 400
-        if is_active:
+        if user_record["is_active"]:
             return jsonify({"error": "User is already registered."}), 400
         else:
             # If is_active is FALSE and email is not blacklisted, proceed with registration, with the given data by updating the existing data in the database
@@ -129,10 +127,9 @@ def resend_activation():
     try:
         user = check_user_exist(email)
         if user:
-            is_active, is_blacklisted = user
-            if is_blacklisted:
+            if user['blacklist']:
                 return jsonify({"error": "This email address is blacklisted and cannot recieve the verification mail, please contact support."}), 400
-            if is_active:
+            if user["is_active"]:
                 return jsonify({"message": "This account is already verified, Sign in with email and password."}), 400
         else:
             return jsonify({"error": "No User found, Please register again!"}), 404
@@ -158,9 +155,9 @@ def request_password_reset():
         user = check_user_exist(email)
         if user:
             is_active, is_blacklisted = user
-            if is_blacklisted:
+            if user["blacklist"]:
                 return jsonify({"error": "This email address is blacklisted, Please contact support."}), 400
-            if not is_active:
+            if not user["is_active"]:
                 return jsonify({"error": "User not found"}), 404
         else:
             return jsonify({"error": "User not found"}), 404
@@ -204,24 +201,23 @@ def login():
         user = fetch_sign_in(email)
         if not user:
             return jsonify({"error": "User not found."}), 400
-        stored_password, stored_role, is_active, name, blacklist, is_2fa = user
         # Check if user is active
-        if blacklist:
+        if user["blacklist"]:
             return jsonify({"error": "User is Blacklisted. Please contact support."}), 400
-        if not is_active:
+        if not user["is_active"]:
             return jsonify({"error": "User not found."}), 400
         # Validate the password
-        if bcrypt.checkpw(password.encode('utf-8'), stored_password.tobytes()):
-            if is_2fa:
+        if bcrypt.checkpw(password.encode('utf-8'), user["password"].tobytes()):
+            if user["is_2fa"]:
                 if request.args.get("otp"):
                     totp_token = request.args.get("otp")
                     verification = verify_totp(email, totp_token)
                     if not verification:
                         return jsonify({"error": "Invalid otp"}), 400
                     return {"message": "Valid OTP. Login sucessful.",
-                            "token": generate_login_jwt_token(name, email, stored_role, is_active, blacklist)}
+                            "token": generate_login_jwt_token(user["name"], email, user["role"], user["is_active"], user["blacklist"], user["is_2fa"])}
                 return {"message": "Enter the OTP from the Authenticator App."}
-            return {"message": "Login sucessful.", "token":generate_login_jwt_token(name, email, stored_role, is_active, blacklist, is_2fa)}
+            return {"message": "Login sucessful.", "token":generate_login_jwt_token(user["name"], email, user["role"], user["is_active"], user["blacklist"], user["is_2fa"])}
         else:
             return jsonify({"error": "User not found or incorrect credentials."}), 400
     except Exception as e:
@@ -261,7 +257,7 @@ def change_password_route(email):
     try:
         stored_password = fetch_password(email)
         # Validate the current password
-        if not bcrypt.checkpw(current_password.encode('utf-8'), stored_password[0].tobytes()):
+        if not bcrypt.checkpw(current_password.encode('utf-8'), stored_password["password"].tobytes()):
             return jsonify({"error": "Current password is incorrect."}), 401
         # Update the password in the database
         update_new_password(new_password, email)
