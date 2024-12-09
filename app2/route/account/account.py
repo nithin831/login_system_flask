@@ -23,18 +23,13 @@ def register_user():
             return jsonify({"error": "All fields are required"}), 400
         response, message = validate_user_email(email)
         if not response:
-            return jsonify({"message": message})
-        # Create a dictionary of the fields to update
-        update_fields = {}
-        if name:
-            response, message = validate_user_name(name)
-            if not response:
-                return jsonify({"message": message})
-            update_fields["name"] = name
-        if password:
-            response, message = validate_user_password(password)
-            if not response:
-                return jsonify({"message": message})
+            return jsonify({"message": message}), 400
+        response, message = validate_user_name(name)
+        if not response:
+            return jsonify({"message": message}), 400
+        response, message = validate_user_password(password)
+        if not response:
+            return jsonify({"message": message}), 400
         # checks wheather the user exist or not
         user_record = check_user_exist(data)
         if not user_record:
@@ -76,18 +71,13 @@ def register_admin():
             return jsonify({"error": "All fields are required"}), 400
         response, message = validate_user_email(email)
         if not response:
-            return jsonify({"message": message})
-        # Create a dictionary of the fields to update
-        update_fields = {}
-        if name:
-            response, message = validate_user_name(name)
-            if not response:
-                return jsonify({"message": message})
-            update_fields["name"] = name
-        if password:
-            response, message = validate_user_password(password)
-            if not response:
-                return jsonify({"message": message})
+            return jsonify({"message": message}), 400
+        response, message = validate_user_name(name)
+        if not response:
+            return jsonify({"message": message}), 400
+        response, message = validate_user_password(password)
+        if not response:
+            return jsonify({"message": message}), 400
         # checks wheather the user exist or not
         user_record = check_user_exist(data)
         if not user_record:
