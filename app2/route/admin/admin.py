@@ -37,7 +37,6 @@ def create_user_by_admin():
     is_active = True
     if not name or not email or not password:
         return jsonify({"error": "Name, email, and password are required"}), 400
-
     response, message = validate_user_email(email)
     if not response:
         return jsonify({"message": message}), 400
@@ -47,7 +46,6 @@ def create_user_by_admin():
     response, message = validate_user_password(password)
     if not response:
         return jsonify({"message": message}), 400
-
     try:
         existing_user = check_user_exist(data)
         if existing_user:
