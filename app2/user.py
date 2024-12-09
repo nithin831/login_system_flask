@@ -35,9 +35,8 @@ def fetch_sign_in(email):
     finally:
         release_connection(conn)
         
-def check_user_exist(data):
+def check_user_exist(email):
     conn = get_connection()
-    email = data.get('email')
     try:
         with conn.cursor() as cur:
             # Check if email already exists in the database

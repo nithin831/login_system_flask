@@ -22,11 +22,6 @@ def generate_verification_jwt_token(email):
     payload = {'email': email, 'exp': expiration_time}
     return jwt.encode(payload, Config.SECRET_KEY, algorithm='HS256')
 
-def generate_2fa_verification_jwt_token(email, is_2fa):
-    expiration_time = datetime.utcnow() + timedelta(minutes=5)  # 5 minutes expiration
-    payload = {'email': email, 'is_2fa':is_2fa, 'exp': expiration_time}
-    return jwt.encode(payload, Config.SECRET_KEY, algorithm='HS256')
-
 def decode_jwt_token(token):
     try:
         payload = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
