@@ -1,4 +1,7 @@
 import bcrypt
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
 from database import get_connection, release_connection
 from utils.jwt_utils import generate_login_jwt_token, generate_verification_jwt_token
 from config import Config
@@ -149,11 +152,12 @@ def update_2fa(is_2fa, email):
 def fetch_users_from_db(page, per_page, email=None, name=None, role=None, is_active=None, search=None):
     conn = get_connection()
     try:
-        query = "SELECT * FROM user_table"
+        query = "SELECT id, email, name, role, created_on, is_active, blacklist FROM user_table"
         count_query = "SELECT COUNT(*) FROM user_table"
         filters = []
         params = []
-        # Apply filters based on the parameters provided
+
+        # Apply filters based on the provided parameters
         if email:
             filters.append("email = %s")
             params.append(email)
@@ -169,23 +173,31 @@ def fetch_users_from_db(page, per_page, email=None, name=None, role=None, is_act
         if search:
             filters.append("(email ILIKE %s OR name ILIKE %s)")
             params.extend([f"%{search}%", f"%{search}%"])
+
         if filters:
             filter_clause = " WHERE " + " AND ".join(filters)
             query += filter_clause
             count_query += filter_clause
+
         # Execute the count query
         with conn.cursor() as cursor:
             cursor.execute(count_query, tuple(params))
             total_count = cursor.fetchone()[0]
-        # Add pagination to the main query
-        query += " LIMIT %s OFFSET %s"
+
+        # Add pagination
+        query += " ORDER BY created_on DESC LIMIT %s OFFSET %s"
         params.extend([per_page, (page - 1) * per_page])
 
         # Execute the main query to fetch users
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
             cursor.execute(query, tuple(params))
             users = cursor.fetchall()
+
         return users, total_count
+
+    except Exception as e:
+        raise Exception(f"Database query failed: {e}")
+
     finally:
         release_connection(conn)
 

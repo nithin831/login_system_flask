@@ -21,12 +21,18 @@ def register_user():
         name = data.get('name')
         if not email or not password or not name:
             return jsonify({"error": "All fields are required"}), 400
-        for validator, value in [
-            (validate_user_email, email),
-            (validate_user_name, name),
-            (validate_user_password, password),
-        ]:
-            response, message = validator(value)
+        response, message = validate_user_email(email)
+        if not response:
+            return jsonify({"message": message})
+        # Create a dictionary of the fields to update
+        update_fields = {}
+        if name:
+            response, message = validate_user_name(name)
+            if not response:
+                return jsonify({"message": message})
+            update_fields["name"] = name
+        if password:
+            response, message = validate_user_password(password)
             if not response:
                 return jsonify({"message": message})
         # checks wheather the user exist or not
@@ -68,12 +74,18 @@ def register_admin():
         name = data.get('name')
         if not email or not password or not name:
             return jsonify({"error": "All fields are required"}), 400
-        for validator, value in [
-            (validate_user_email, email),
-            (validate_user_name, name),
-            (validate_user_password, password),
-        ]:
-            response, message = validator(value)
+        response, message = validate_user_email(email)
+        if not response:
+            return jsonify({"message": message})
+        # Create a dictionary of the fields to update
+        update_fields = {}
+        if name:
+            response, message = validate_user_name(name)
+            if not response:
+                return jsonify({"message": message})
+            update_fields["name"] = name
+        if password:
+            response, message = validate_user_password(password)
             if not response:
                 return jsonify({"message": message})
         # checks wheather the user exist or not
