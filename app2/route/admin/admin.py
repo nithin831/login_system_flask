@@ -106,11 +106,12 @@ def get_users():
             "total_count": total_count,
             "page": page,
             "per_page": per_page,
-            "total_pages": (total_count + per_page - 1) // per_page,
+            "total_pages": (total_count["count"] + per_page - 1) // per_page,
             "users": user_list
         }
         return jsonify(response), 200
     except Exception as e:
+        # raise e
         return jsonify({'message': f'Error fetching users: {e}'}), 500
 
 @admin.patch('/update-user')
@@ -121,7 +122,6 @@ def update_users():
     name = data.get("name")
     password = data.get("password")
     role = data.get("role")
-    print(role)
     is_active = data.get("is_active")
     # Validate input
     if not email:
