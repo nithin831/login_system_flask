@@ -1,6 +1,5 @@
 from flask import Flask
 from config import Config, mail
-from database import setup_database
 from route.account.account import account
 from route.admin.admin import admin
 
@@ -11,7 +10,6 @@ app.json.sort_keys = False
 
 # Initialize Flask-Mail with the app
 mail.init_app(app)
-setup_database()
 
 # Register blueprints
 app.register_blueprint(account, url_prefix='/account')
