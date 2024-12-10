@@ -21,7 +21,6 @@ def create_user(email, password, name, role, is_active):
         logging.error(f"Error creating user: {e}")
 
 def fetch_sign_in(email):
-
     try:
         with conn_pool.get_cursor() as cur:
             cur.execute("SELECT password, role, is_active, name, blacklist, is_2fa FROM user_table WHERE email = %s", (email,))

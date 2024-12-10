@@ -36,7 +36,7 @@ def validate_user_password(password):
 
 def verify_totp(email, totp_token):
     secret = fetch_secret_key(email)
-    totp = pyotp.TOTP(secret[0])
+    totp = pyotp.TOTP(secret["secret_key"])
     if not totp.verify(totp_token):
         return False
     return True
