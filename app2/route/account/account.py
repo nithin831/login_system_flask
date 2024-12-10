@@ -207,19 +207,21 @@ def login():
         if not user["is_active"]:
             return jsonify({"error": "User not found."}), 400
         # Validate the password
-        if bcrypt.checkpw(password.encode('utf-8'), user["password"].tobytes()):
-            if user["is_2fa"]:
-                if request.args.get("otp"):
-                    totp_token = request.args.get("otp")
-                    verification = verify_totp(email, totp_token)
-                    if not verification:
-                        return jsonify({"error": "Invalid otp"}), 400
-                    return {"message": "Valid OTP. Login sucessful.",
-                            "token": generate_login_jwt_token(user["name"], email, user["role"], user["is_active"], user["blacklist"], user["is_2fa"])}
-                return {"message": "Enter the OTP from the Authenticator App."}
-            return {"message": "Login sucessful.", "token":generate_login_jwt_token(user["name"], email, user["role"], user["is_active"], user["blacklist"], user["is_2fa"])}
-        else:
+        if not request.args.get("otp") and user["is_2fa"]:
+            return {"message": "Enter the OTP from the Authenticator App."}, 200
+        if request.args.get("otp") and user["is_2fa"]:
+            totp_token = request.args.get("otp")
+            verification = verify_totp(email, totp_token)
+            if not verification:
+                return jsonify({"error": "Invalid otp"}), 400
+
+        if not bcrypt.checkpw(password.encode('utf-8'), user["password"].tobytes()):
             return jsonify({"error": "User not found or incorrect credentials."}), 400
+
+        return {"message": "Valid OTP. Login sucessful.",
+             "token": generate_login_jwt_token(user["name"], email, user["role"], user["is_active"], user["blacklist"], user["is_2fa"])}
+
+
     except Exception as e:
         # raise e
         return jsonify({"error": str(e)}), 400
