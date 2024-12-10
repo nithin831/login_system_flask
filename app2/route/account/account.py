@@ -1,6 +1,6 @@
-from flask import jsonify, Blueprint, request
-import bcrypt
-import pyotp
+from flask import  Blueprint, request
+# import bcrypt
+# import pyotp
 from user import *
 from validate import *
 from utils.jwt_utils import *
@@ -288,7 +288,9 @@ def enable_2fa(email):
             "key": secret, "qr_link": f"https://quickchart.io/qr?text={url}"}
     except Exception as e:
         # raise e
-        return jsonify({"error": str(e)}), 400
+        # return jsonify({"error": str(e)}), 400
+        raise  e
+
 
 @account.post('/2fa/disable-2fa')
 @is_sign_in
