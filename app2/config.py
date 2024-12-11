@@ -15,6 +15,13 @@ class Config:
     MAIL_PASSWORD = environ.get("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = environ.get("MAIL_DEFAULT_SENDER")
 
+    # GitHub OAuth configuration
+    GITHUB_CLIENT_ID = environ.get("GITHUB_CLIENT_ID")
+    GITHUB_CLIENT_SECRET = environ.get("GITHUB_CLIENT_SECRET")
+    GITHUB_AUTH_URL = environ.get("GITHUB_AUTH_URL")
+    GITHUB_TOKEN_URL = environ.get("GITHUB_TOKEN_URL")
+    GITHUB_API_URL = environ.get("GITHUB_API_URL")
+
     # Frontend URL (for email verification link)
     FRONTEND_URL = "http://localhost:4000"
 

@@ -2,6 +2,7 @@ from flask import Flask
 from config import Config, mail
 from route.account.account import account
 from route.admin.admin import admin
+from route.social_auth.github import auth
 
 app = Flask(__name__)
 app.secret_key = Config.SECRET_KEY
@@ -14,6 +15,7 @@ mail.init_app(app)
 # Register blueprints
 app.register_blueprint(account, url_prefix='/account')
 app.register_blueprint(admin, url_prefix='/admin')
+app.register_blueprint(auth, url_prefix='/auth')
 
 if __name__ == "__main__":
     app.run(debug=True)
