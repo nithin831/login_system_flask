@@ -1,5 +1,7 @@
+import requests
 from flask import jsonify, Blueprint, request
 import bcrypt
+from config import Config
 import pyotp
 from user import *
 from validate import *
@@ -304,10 +306,3 @@ def disable_2fa(email):
         return {"message": "Valid OTP. 2 Step Authentication is disabled sucessfully."}
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
-
-
-
-
-
-
