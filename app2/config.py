@@ -22,6 +22,15 @@ class Config:
     GITHUB_TOKEN_URL = environ.get("GITHUB_TOKEN_URL")
     GITHUB_API_URL = environ.get("GITHUB_API_URL")
 
+    # google OAuth config
+    GOOGLE_CLIENT_ID=environ.get("CLIENT_ID")
+    GOOGLE_CLIENT_SECRET=environ.get("CLIENT_SECRET")
+    GOOGLE_AUTH_URL=environ.get("AUTH_URL")
+    GOOGLE_TOKEN_URL=environ.get("TOKEN_URL")
+    GOOGLE_API_URL=environ.get("API_URL")
+
+
+
     # Frontend URL (for email verification link)
     FRONTEND_URL = "http://localhost:4000"
 

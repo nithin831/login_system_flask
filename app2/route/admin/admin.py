@@ -103,7 +103,7 @@ def get_users():
         ]
         # Construct paginated response
         response = {
-            "total_count": total_count,
+            "total_count": total_count["count"],
             "page": page,
             "per_page": per_page,
             "total_pages": (total_count["count"] + per_page - 1) // per_page,
