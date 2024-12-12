@@ -83,3 +83,22 @@ def send_account_update_email(user_email):
     """
     msg = Message(subject, recipients=[user_email], body=body)
     mail.send(msg)
+
+def send_login_link(email, login_link):
+    subject = "Secure Login Link for Your Account"
+    body = f"""
+    Dear User,
+
+    We received a request to log in to your account. For security purposes, we have provided a secure, passwordless login link. Please click the link below to access your account:
+
+    {login_link}
+
+    This link is valid for 5 minutes. If you did not request this login, please ignore this email or contact our support team immediately.
+
+    Thank you for choosing our services.
+
+    Best regards,  
+    Support Team  
+    """
+    msg = Message(subject, recipients=[email], body=body)
+    mail.send(msg)

@@ -24,7 +24,6 @@ def blacklist_endpoint():
     except Exception as e:
         return {"error": str(e)}
 
-
 @admin.post('/create-user')
 @is_admin
 def create_user_by_admin():

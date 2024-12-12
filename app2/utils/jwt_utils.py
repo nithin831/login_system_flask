@@ -2,7 +2,7 @@ import jwt
 from datetime import datetime, timedelta
 from config import Config
 
-def generate_login_jwt_token(name, email, role, is_active, blacklist, is2fa):
+def generate_login_jwt_token(name, email, role, is_active, blacklist, is2fa, type):
     """Generate a JWT token."""
     expiration = datetime.utcnow() + timedelta(seconds=Config.JWT_EXPIRATION_SECONDS)
     payload = {
@@ -12,14 +12,15 @@ def generate_login_jwt_token(name, email, role, is_active, blacklist, is2fa):
         "is_active": is_active,
         "blacklist": blacklist,
         "is_2fa": is2fa,
+        "type": type,
         "exp": expiration
     }
     token = jwt.encode(payload, Config.SECRET_KEY, algorithm="HS256")
     return token
 
-def generate_verification_jwt_token(email):
+def generate_verification_jwt_token(email, type):
     expiration_time = datetime.utcnow() + timedelta(minutes=5)  # 5 minutes expiration
-    payload = {'email': email, 'exp': expiration_time}
+    payload = {'email': email, "type": type, 'exp': expiration_time}
     return jwt.encode(payload, Config.SECRET_KEY, algorithm='HS256')
 
 def decode_jwt_token(token):

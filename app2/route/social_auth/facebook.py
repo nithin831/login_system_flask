@@ -57,7 +57,7 @@ def facebook_callback():
             return jsonify({"error": "User is inactive. Please verify your account."}), 400
         # Generate JWT token for existing user
         token = generate_login_jwt_token(user["name"], email, user["role"], user["is_active"],
-                                         user["blacklist"], user["is_2fa"])
+                                         user["blacklist"], user["is_2fa"], type="login")
         return jsonify({"message": "Login successful", "token": token}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

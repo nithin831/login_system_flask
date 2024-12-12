@@ -1,6 +1,6 @@
 from functools import wraps
 import jwt
-from flask import request
+from flask import request, jsonify
 from config import Config
 
 def is_sign_in(func):
@@ -11,6 +11,8 @@ def is_sign_in(func):
             return {"error": "Sign in is required."}
         try:
             payload = jwt.decode(header, Config.SECRET_KEY, algorithms=["HS256"])
+            if payload.get('type') != "login":
+                return jsonify({"error": "Invalid permission."}), 404
             result = func(*args, email=payload["email"], **kwargs)
             return result
         except jwt.ExpiredSignatureError:

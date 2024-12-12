@@ -38,7 +38,7 @@ def register_user():
             # If user is not found in database, then register
             create_user(email, password, name, role, is_active)  # Register the user
             # Generate a verification token and send it via email
-            verification_token = generate_verification_jwt_token(email)
+            verification_token = generate_verification_jwt_token(email, type="activate_user")
             verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
             send_verification_email(email, verification_link)
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
@@ -51,7 +51,7 @@ def register_user():
             # If is_active is FALSE and email is not blacklisted, proceed with registration, with the given data by updating the existing data in the database
             update_user(email, password, name, role, is_active)
             # Generate a verification token and send it via email
-            verification_token = generate_verification_jwt_token(email)
+            verification_token = generate_verification_jwt_token(email, type="activate_user")
             verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
             send_verification_email(email, verification_link)
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
@@ -85,7 +85,7 @@ def register_admin():
             # If user is not found in database, then register
             create_user(email, password, name, role, is_active)  # Register the user
             # Generate a verification token and send it via email
-            verification_token = generate_verification_jwt_token(email)
+            verification_token = generate_verification_jwt_token(email, type="activate_user")
             verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
             send_verification_email(email, verification_link)
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
@@ -98,7 +98,7 @@ def register_admin():
             # If is_active is FALSE and email is not blacklisted, proceed with registration, with the given data by updating the existing data in the database
             update_user(email, password, name, role, is_active)
             # Generate a verification token and send it via email
-            verification_token = generate_verification_jwt_token(email)
+            verification_token = generate_verification_jwt_token(email, type="activate_user")
             verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
             send_verification_email(email, verification_link)
             return jsonify({"message": "User registered successfully. Please verify your email to complete the registration process."}), 201
@@ -112,6 +112,8 @@ def activate_data_endpoint():
         return jsonify({"error": "Missing token"}), 400
     try:
         payload = decode_jwt_token(token)
+        if payload.get('type') != "activate_user":
+            return jsonify({"error": "Invalid permission."}), 404
         activate_user(payload["email"])
         return jsonify({"message": "Email verified successfully!"}), 200
     except Exception as e:
@@ -136,8 +138,8 @@ def resend_activation():
         else:
             return jsonify({"error": "No User found, Please register again!"}), 404
         # Generate a new verification token
-        verification_token = generate_verification_jwt_token(email)
-        verification_link = f"{Config.FRONTEND_URL}/activate?token={verification_token}"
+        verification_token = generate_verification_jwt_token(email, type="activate_user")
+        verification_link = f"{Config.FRONTEND_URL}/account/activate?token={verification_token}"
         # Send the verification email
         send_verification_email(email, verification_link)
         return jsonify({"message": "A new activation email has been sent. Please check your inbox."}), 200
@@ -164,7 +166,7 @@ def request_password_reset():
         else:
             return jsonify({"error": "User not found"}), 404
         # Generate password reset token
-        reset_token = generate_verification_jwt_token(email)
+        reset_token = generate_verification_jwt_token(email, type="reset_password")
         # Send the password reset email
         reset_link = f"{Config.FRONTEND_URL}/account/reset-password?token={reset_token}"
         send_reset_password_email(email, reset_link)
@@ -184,6 +186,8 @@ def reset_password_endpoint():
         return jsonify({"message": message})
     try:
         payload = decode_jwt_token(token)  # Decode the token to get email
+        if payload.get('type') != "reset_password":
+            return jsonify({"error": "Invalid permission."}), 404
         update_new_password(new_password, payload["email"])
         return jsonify({"message": "Password has been reset successfully."}), 200
     except Exception as e:
@@ -216,13 +220,10 @@ def login():
             verification = verify_totp(email, totp_token)
             if not verification:
                 return jsonify({"error": "Invalid otp"}), 400
-
         if not bcrypt.checkpw(password.encode('utf-8'), user["password"].tobytes()):
             return jsonify({"error": "User not found or incorrect credentials."}), 400
-
         return {"message": "Valid OTP. Login sucessful.",
-             "token": generate_login_jwt_token(user["name"], email, user["role"], user["is_active"], user["blacklist"], user["is_2fa"])}
-
+             "token": generate_login_jwt_token(user["name"], email, user["role"], user["is_active"], user["blacklist"], user["is_2fa"], type="login")}
 
     except Exception as e:
         # raise e
@@ -236,6 +237,8 @@ def get_details():
     try:
         # Check the token and retrieve user details
         payload = decode_jwt_token(token)
+        if payload.get('type') != "login":
+            return jsonify({"error": "Invalid permission."}), 404
         return jsonify({
             "email": payload["email"],
             "name": payload["name"],
