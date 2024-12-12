@@ -23,11 +23,19 @@ class Config:
     GITHUB_API_URL = environ.get("GITHUB_API_URL")
 
     # google OAuth config
-    GOOGLE_CLIENT_ID=environ.get("CLIENT_ID")
-    GOOGLE_CLIENT_SECRET=environ.get("CLIENT_SECRET")
-    GOOGLE_AUTH_URL=environ.get("AUTH_URL")
-    GOOGLE_TOKEN_URL=environ.get("TOKEN_URL")
-    GOOGLE_API_URL=environ.get("API_URL")
+    GOOGLE_CLIENT_ID=environ.get("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET=environ.get("GOOGLE_CLIENT_SECRET")
+    GOOGLE_AUTH_URL=environ.get("GOOGLE_AUTH_URL")
+    GOOGLE_TOKEN_URL=environ.get("GOOGLE_TOKEN_URL")
+    GOOGLE_API_URL=environ.get("GOOGLE_API_URL")
+    GOOGLE_REDIRECT_URL=environ.get("GOOGLE_REDIRECT_URL")
+
+    LINKEDIN_CLIENT_ID = environ.get("LINKEDIN_CLIENT_ID")
+    LINKEDIN_CLIENT_SECRET = environ.get("LINKEDIN_CLIENT_SECRET")
+    LINKEDIN_AUTH_URL = environ.get("LINKEDIN_AUTH_URL")
+    LINKEDIN_TOKEN_URL = environ.get("LINKEDIN_TOKEN_URL")
+    LINKEDIN_API_URL = environ.get("LINKEDIN_API_URL")
+    LINKEDIN_REDIRECT_URL = environ.get("LINKEDIN_REDIRECT_URL")
 
     # Facebook OAuth configuration
     FACEBOOK_CLIENT_ID = environ.get("FACEBOOK_CLIENT_ID")

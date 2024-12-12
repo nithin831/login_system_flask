@@ -1,66 +1,63 @@
-from flask import  request, jsonify, Blueprint
 import requests
-from user import check_user_exist, fetch_sign_in
-from utils.jwt_utils import  generate_login_jwt_token
+from flask import jsonify, Blueprint, request, url_for
+from config import Config
+from user import fetch_sign_in
+from utils.jwt_utils import generate_login_jwt_token
 
 auth_google = Blueprint('auth_google', __name__)
-# Configuration
-CLIENT_ID = "990501356456-39749cat7779klhf4ppjupaf21utnm6t.apps.googleusercontent.com"
-CLIENT_SECRET = "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"
-REDIRECT_URI = "http://localhost:4000/auth_google/google/callback"
 
-@auth_google.get('/google')
-def google_auth():
-    # Redirect user to Google's OAuth 2.0 authorization endpoint
+@auth_google.get('/auth')
+def google_login():
+    """Redirects the user to Google's OAuth 2.0 authorization page."""
+    redirect_url = Config.FRONTEND_URL + url_for('auth_google.google_callback')
+    print(Config.FRONTEND_URL)
     auth_url = (
-        f"https://accounts.google.com/o/oauth2/v2/auth?"
-        f"client_id={CLIENT_ID}&"
-        f"redirect_uri={REDIRECT_URI}&"
+        f"{Config.GOOGLE_AUTH_URL}"
+        f"client_id={Config.GOOGLE_CLIENT_ID}&"
+        f"redirect_uri={redirect_url}&"
         f"response_type=code&"
         f"scope=email profile"
     )
-    print(auth_url)
-    return jsonify({"auth_url":auth_url}),
+    return jsonify({"url": auth_url}), 200
 
-
-@auth_google.get('/google/callback')
+@auth_google.get('/auth/callback')
 def google_callback():
-    # Retrieve authorization code
+    """Handles the callback from Google and processes the login."""
     code = request.args.get('code')
     if not code:
-        return jsonify({"error": "Missing authorization code"}), 400
-
+        return jsonify({"error": "Authorization code not provided"}), 400
+    redirect_url = Config.FRONTEND_URL + url_for('auth_google.google_callback')
     # Exchange authorization code for access token
-    token_url = "https://oauth2.googleapis.com/token"
-    token_data = {
-        "code": code,
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "redirect_uri": REDIRECT_URI,
-        "grant_type": "authorization_code",
-    }
-    token_response = requests.post(token_url, data=token_data)
+    token_response = requests.post(
+        Config.GOOGLE_TOKEN_URL,
+        data={
+            "code": code,
+            "client_id": Config.GOOGLE_CLIENT_ID,
+            "client_secret": Config.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": redirect_url,
+            "grant_type": "authorization_code",
+        },
+    )
     if token_response.status_code != 200:
-        return jsonify({"error": "Failed to exchange token"}), 400
+        return jsonify({"error": "Failed to fetch access token from Google"}), 400
 
-    token_info = token_response.json()
-    access_token = token_info.get("access_token")
+    token_data = token_response.json()
+    access_token = token_data.get('access_token')
     if not access_token:
-        return jsonify({"error": "No access token received"}), 400
+        return jsonify({"error": "Access token not received"}), 400
 
-    # Retrieve user information from Google
-    userinfo_url = "https://www.googleapis.com/oauth2/v2/userinfo"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    userinfo_response = requests.get(userinfo_url, headers=headers)
-    if userinfo_response.status_code != 200:
-        return jsonify({"error": "Failed to fetch user info"}), 400
-
-    userinfo = userinfo_response.json()
-    print(userinfo)
-    email = userinfo.get("email")
+    # Fetch the user data from Google
+    user_response = requests.get(
+        Config.GOOGLE_API_URL,
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    if user_response.status_code != 200:
+        return jsonify({"error": "Failed to fetch user data from Google"}), 400
+    user_data = user_response.json()
+    email = user_data.get('email')
     if not email:
-        return jsonify({"error": "Failed to fetch email"}), 400
-
+        return jsonify({"error": "Email not provided by Google"}), 400
+    # Check if the user exists in the database
     try:
         user = fetch_sign_in(email)
         if not user:
@@ -70,8 +67,9 @@ def google_callback():
         if not user["is_active"]:
             return jsonify({"error": "User is inactive. Please verify your account."}), 400
         # Generate JWT token for existing user
-        token = generate_login_jwt_token(user["name"], email, user["role"], user["is_active"], user["blacklist"],
-                                         user["is_2fa"])
+        token = generate_login_jwt_token(
+            user["name"], email, user["role"], user["is_active"], user["blacklist"], user["is_2fa"], type="login"
+        )
         return jsonify({"message": "Login successful", "token": token}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
