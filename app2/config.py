@@ -29,10 +29,15 @@ class Config:
     GOOGLE_TOKEN_URL=environ.get("TOKEN_URL")
     GOOGLE_API_URL=environ.get("API_URL")
 
+    # Facebook OAuth configuration
+    FACEBOOK_CLIENT_ID = environ.get("FACEBOOK_CLIENT_ID")
+    FACEBOOK_CLIENT_SECRET = environ.get("FACEBOOK_CLIENT_SECRET")
+    FACEBOOK_AUTH_URL = environ.get("FACEBOOK_AUTH_URL")
+    FACEBOOK_TOKEN_URL = environ.get("FACEBOOK_TOKEN_URL")
+    FACEBOOK_API_URL = environ.get("FACEBOOK_API_URL")
 
-
-    # Frontend URL (for email verification link)
-    FRONTEND_URL = "http://localhost:4000"
+    # Frontend URL (local host)
+    FRONTEND_URL = environ.get("FRONTEND_URL")
 
 # For email
 from flask_mail import Mail

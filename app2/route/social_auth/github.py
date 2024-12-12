@@ -4,16 +4,16 @@ from config import Config
 from user import *
 from utils.jwt_utils import *
 
-auth = Blueprint('auth', __name__)
+auth_github = Blueprint('auth_github', __name__)
 
-@auth.get('/github')
+@auth_github.get('/auth')
 def github_login():
     """Redirects the user to GitHub's authorization page."""
-    redirect_url = request.url_root.strip('/') + url_for('auth.github_callback')
+    redirect_url = Config.FRONTEND_URL + url_for('auth_github.github_callback')
     auth_url = f"{Config.GITHUB_AUTH_URL}?client_id={Config.GITHUB_CLIENT_ID}&redirect_uri={redirect_url}&scope=user"
     return jsonify({"url":auth_url}), 200
 
-@auth.get('/github/callback')
+@auth_github.get('/auth/callback')
 def github_callback():
     """Handles the callback from GitHub and processes the login."""
     code = request.args.get('code')
