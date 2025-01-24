@@ -29,5 +29,4 @@ app.register_blueprint(passwordless, url_prefix='/passwordless')
 if __name__ == "__main__":
     app.run(debug=True)
 
-# request.args.get("code")
 

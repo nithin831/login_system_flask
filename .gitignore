@@ -4,3 +4,6 @@ docker-compose.yml
 commands.txt
 git_cmds.txt
 .idea
+async_api.py
+pypy_jit.py
+app2.utils.demo.py

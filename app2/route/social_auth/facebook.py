@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, redirect, url_for
 import requests
 from config import Config
-from user import create_user, check_user_exist, fetch_sign_in
+from user import fetch_sign_in
 from utils.jwt_utils import generate_login_jwt_token
 
 auth_facebook = Blueprint('auth_facebook', __name__)

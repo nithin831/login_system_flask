@@ -1,4 +1,4 @@
-from flask import jsonify, Blueprint, request
+from flask import Blueprint
 from user import *
 from utils.auth_check import is_admin
 from validate import *

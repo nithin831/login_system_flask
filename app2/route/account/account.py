@@ -1,14 +1,13 @@
-import requests
-from flask import jsonify, Blueprint, request
-import bcrypt
-from config import Config
-import pyotp
+from flask import jsonify, Blueprint
 from user import *
+from utils.rate_limit_login import rate_limit
+from utils.redis_conn import cache
 from validate import *
 from utils.jwt_utils import *
 from utils.email_utils import *
-from utils.auth_check import is_sign_in
+from utils.auth_check import is_sign_in, login_required
 from route.admin.admin import update_user
+import bcrypt
 
 account = Blueprint('account', __name__)
 
@@ -193,41 +192,56 @@ def reset_password_endpoint():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-@account.post('/sign-in')
-def login():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    if not email or not password:
-        return jsonify({"error": "Email and password are required."}), 400
-    response, message = validate_user_email(email)
-    if not response:
-        return jsonify({"message": message})
-    try:
-        user = fetch_sign_in(email)
-        if not user:
-            return jsonify({"error": "User not found."}), 400
-        # Check if user is active
-        if user["blacklist"]:
-            return jsonify({"error": "User is Blacklisted. Please contact support."}), 400
-        if not user["is_active"]:
-            return jsonify({"error": "User not found."}), 400
-        # Validate the password
-        if not request.args.get("otp") and user["is_2fa"]:
-            return {"message": "Enter the OTP from the Authenticator App."}, 200
-        if request.args.get("otp") and user["is_2fa"]:
-            totp_token = request.args.get("otp")
-            verification = verify_totp(email, totp_token)
-            if not verification:
-                return jsonify({"error": "Invalid otp"}), 400
-        if not bcrypt.checkpw(password.encode('utf-8'), user["password"].tobytes()):
-            return jsonify({"error": "User not found or incorrect credentials."}), 400
-        return {"message": "Valid OTP. Login sucessful.",
-             "token": generate_login_jwt_token(user["name"], email, user["role"], user["is_active"], user["blacklist"], user["is_2fa"], type="login")}
+# @account.post('/sign-in')
+# def login():
+#     data = request.get_json()
+#     email = data.get('email')
+#     password = data.get('password')
+#     if not email or not password:
+#         return jsonify({"error": "Email and password are required."}), 400
+#     response, message = validate_user_email(email)
+#     if not response:
+#         return jsonify({"message": message})
+#     try:
+#         user = fetch_sign_in(email)
+#         if not user:
+#             return jsonify({"error": "User not found."}), 400
+#         # Check if user is active
+#         if user["blacklist"]:
+#             return jsonify({"error": "User is Blacklisted. Please contact support."}), 400
+#         if not user["is_active"]:
+#             return jsonify({"error": "User not found."}), 400
+#         # Validate the password
+#         if not request.args.get("otp") and user["is_2fa"]:
+#             return {"message": "Enter the OTP from the Authenticator App."}, 200
+#         if request.args.get("otp") and user["is_2fa"]:
+#             totp_token = request.args.get("otp")
+#             verification = verify_totp(email, totp_token)
+#             if not verification:
+#                 return jsonify({"error": "Invalid otp"}), 400
+#         if not bcrypt.checkpw(password.encode('utf-8'), user["password"].tobytes()):
+#             return jsonify({"error": "User not found or incorrect credentials."}), 400
+#         return {"message": "Valid OTP. Login sucessful.",
+#              "token": generate_login_jwt_token(user["name"], email, user["role"], user["is_active"], user["blacklist"], user["is_2fa"], type="login")}
+#
+#     except Exception as e:
+#         # raise e
+#         return jsonify({"error": str(e)}), 400
 
-    except Exception as e:
-        # raise e
-        return jsonify({"error": str(e)}), 400
+
+@account.post('/sign-in')
+@rate_limit(limit=2, window=60)
+@login_required
+@validate_request(["email", "password"])
+def sign_in(user, email):
+    # Generate the JWT token if everything is correct
+    return {
+        "message": "Login successful.",
+        "token": generate_login_jwt_token(
+            user["name"], email, user["role"], user["is_active"],
+            user["blacklist"], user["is_2fa"], type="login"
+        )
+    }
 
 @account.get('/fetch-data')
 def get_details():
@@ -306,6 +320,38 @@ def disable_2fa(email):
             return jsonify({"error": "Invalid otp"}), 400
         is_2fa = False
         update_2fa(is_2fa, email)
-        return {"message": "Valid OTP. 2 Step Authentication is disabled sucessfully."}
+        return {"message": "Valid OTP. 2 Step Authentication is disabled successfully."}
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+
+@account.post('/login-rate')
+@rate_limit(limit=1, window=60)
+@login_required
+@validate_request(["email", "password"])
+def login(user, email):
+    try:
+        data = request.get_json()
+        print(data)
+        email = data.get('email')
+        password = data.get('password')
+        if not email or not password:
+            return jsonify({"error": "Email and password are required."}), 400
+        response, message = validate_user_email(email)
+        if not response:
+            return jsonify({"message": message})
+        return jsonify({"message": "Login successful!"})
+    except Exception as e:
+        # Handle unexpected errors
+        return jsonify({"error": str(e)}), 500
+
+# Example endpoint
+@account.get('/cache',)
+@cache(ttl=60)  # Apply the cache decorator with a TTL of 60 seconds
+def cache_data(email=None):
+    # This is a dummy function that would return data after performing some logic
+    data = {
+        "message": "This is your data.",
+        "user_email": email  # payload as email from the decoded JWT token
+    }
+    return jsonify(data)

@@ -1,6 +1,5 @@
 import requests
 from flask import jsonify, Blueprint, request, url_for
-from config import Config
 from user import *
 from utils.jwt_utils import *
 

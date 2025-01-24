@@ -25,7 +25,9 @@ def generate_verification_jwt_token(email, type):
 
 def decode_jwt_token(token):
     try:
+        print("reading user data")
         payload = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
+        print("this is payload:",payload)
         return payload
     except jwt.ExpiredSignatureError:
         raise Exception("Verification link has expired.")

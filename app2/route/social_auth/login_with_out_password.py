@@ -1,5 +1,4 @@
 from flask import jsonify, Blueprint, request, url_for
-from config import Config
 from utils.jwt_utils import *
 from utils.email_utils import send_login_link
 from user import *

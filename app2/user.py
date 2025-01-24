@@ -1,5 +1,4 @@
 import bcrypt
-import logging
 from database import conn_pool
 
 def create_user(email, password, name, role, is_active):
